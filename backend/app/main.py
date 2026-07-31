@@ -30,9 +30,8 @@ from app.routers import (
 # ==========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables when running in development to avoid accidental schema changes
-    if settings.ENVIRONMENT == "development":
-        Base.metadata.create_all(bind=engine)
+    # Ensure database tables exist
+    Base.metadata.create_all(bind=engine)
 
     yield
 
