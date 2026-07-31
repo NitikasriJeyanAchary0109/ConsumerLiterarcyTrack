@@ -7,7 +7,7 @@ import uvicorn
 
 from app.database import engine, Base, get_db
 from app.config import settings
-from app.routers import auth, transactions, goals, roundups, chat, negotiator, forecast, stress, educator
+from app.routers import auth, transactions, goals, roundups, chat, negotiator, forecast, stress, educator, coach
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -74,6 +74,7 @@ app.include_router(negotiator.router, prefix="/api")
 app.include_router(forecast.router, prefix="/api")
 app.include_router(stress.router, prefix="/api")
 app.include_router(educator.router, prefix="/api")
+app.include_router(coach.router,    prefix="/api")
 
 # Automatically generate database tables on startup if running in development mode
 if settings.ENVIRONMENT == "development":
