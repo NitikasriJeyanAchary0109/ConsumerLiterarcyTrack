@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import engine, Base, get_db
@@ -28,8 +28,7 @@ from app.routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if settings.ENVIRONMENT == "development":
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        Base.metadata.create_all(bind=engine)
 
     yield
 
@@ -75,11 +74,11 @@ app.add_middleware(
 # Health Check
 # ==========================
 @app.get("/api/health")
-async def healthcheck(db: AsyncSession = Depends(get_db)):
+def healthcheck(db: Session = Depends(get_db)):
     db_status = "healthy"
 
     try:
-        await db.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1"))
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
 

@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     JSON,
+    Boolean,
 )
 
 from sqlalchemy.orm import relationship
@@ -266,7 +267,7 @@ class Savings(Base):
 
     triggered_by_transaction_id = Column(
         Integer,
-        ForeignKey("transactions.trans_id"),
+        ForeignKey("transactions.id"),
         nullable=True,
     )
 
@@ -423,7 +424,7 @@ class FinancialHealth(Base):
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    trans_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
         Integer,
@@ -444,9 +445,34 @@ class Transaction(Base):
 
     description = Column(String)
 
-    date = Column(
+    transaction_date = Column(
         DateTime,
         default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    round_up_amount = Column(
+        Numeric(12, 2),
+        default=0.00,
+        nullable=False,
+    )
+
+    is_round_up_applied = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False,
     )
 
     user = relationship(
@@ -478,7 +504,7 @@ class Budget(Base):
 
     trans_id = Column(
         Integer,
-        ForeignKey("transactions.trans_id", ondelete="CASCADE"),
+        ForeignKey("transactions.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -568,7 +594,7 @@ class AuditLog(Base):
 
     trans_id = Column(
         Integer,
-        ForeignKey("transactions.trans_id", ondelete="CASCADE"),
+        ForeignKey("transactions.id", ondelete="CASCADE"),
         nullable=False,
     )
 

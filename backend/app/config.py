@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     # Database Configuration
     # ==========================
     DATABASE_URL: str = (
-        "postgresql+asyncpg://postgres:password123@db:5432/sparechange"
+        "postgresql://postgres:password123@db:5432/sparechange"
     )
 
     # ==========================
