@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Literal
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 
 # ==========================================
 # AUTH SCHEMAS
@@ -67,28 +67,36 @@ class SecurityEventResponse(BaseModel):
 # GOAL SCHEMAS
 # ==========================================
 class GoalBase(BaseModel):
-    goal_name: str
-    target: Decimal
-    saved: Decimal = Decimal("0.00")
-    deadline: Optional[datetime] = None
+    title: str
+    target_amount: Decimal
+    current_amount: Decimal = Decimal("0.00")
+    target_date: Optional[datetime] = None
 
 class GoalCreate(BaseModel):
-    goal_name: str
-    target: Decimal
-    deadline: Optional[datetime] = None
+    title: str
+    target_amount: Decimal
+    target_date: Optional[datetime] = None
 
 class GoalUpdate(BaseModel):
-    goal_name: Optional[str] = None
-    target: Optional[Decimal] = None
-    saved: Optional[Decimal] = None
-    deadline: Optional[datetime] = None
+    title: Optional[str] = None
+    target_amount: Optional[Decimal] = None
+    current_amount: Optional[Decimal] = None
+    target_date: Optional[datetime] = None
 
 class GoalResponse(GoalBase):
-    goal_id: int
+    id: int
     user_id: int
+    status: str
+    created_at: datetime
+    is_deleted: bool
 
     class Config:
         from_attributes = True
+
+class GoalDetailResponse(GoalResponse):
+    progress_percentage: float
+    projected_completion_date: Optional[date] = None
+
 
 
 # ==========================================
@@ -96,19 +104,31 @@ class GoalResponse(GoalBase):
 # ==========================================
 class SavingsBase(BaseModel):
     amount: Decimal
-    source: str
-    date: Optional[datetime] = None
+    source: Literal["round_up", "manual", "transfer"]
+    goal_id: Optional[int] = None
 
 class SavingsCreate(SavingsBase):
     pass
 
+class SavingsUpdate(BaseModel):
+    amount: Optional[Decimal] = None
+    source: Optional[Literal["round_up", "manual", "transfer"]] = None
+    goal_id: Optional[int] = None
+
 class SavingsResponse(SavingsBase):
-    save_id: int
+    id: int
     user_id: int
-    date: datetime
+    created_at: datetime
+    triggered_by_transaction_id: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+class SavingsSummaryResponse(BaseModel):
+    total_saved: Decimal
+    saved_this_month: Decimal
+    saved_via_roundup: Decimal
+    saved_via_manual: Decimal
 
 
 # ==========================================
@@ -166,16 +186,25 @@ class TransactionBase(BaseModel):
     category: str
     merchant: str
     type: str = "debit"  # credit/debit
-    date: Optional[datetime] = None
+    transaction_date: Optional[datetime] = None
     description: Optional[str] = None
 
 class TransactionCreate(TransactionBase):
     pass
 
+class TransactionUpdate(BaseModel):
+    merchant: Optional[str] = None
+    category: Optional[str] = None
+    amount: Optional[Decimal] = None
+
 class TransactionResponse(TransactionBase):
-    trans_id: int
+    id: int
     user_id: int
-    date: datetime
+    transaction_date: datetime
+    round_up_amount: Decimal
+    is_round_up_applied: bool
+    created_at: datetime
+    is_deleted: bool
 
     class Config:
         from_attributes = True

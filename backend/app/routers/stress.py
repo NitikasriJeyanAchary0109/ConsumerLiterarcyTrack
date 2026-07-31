@@ -25,7 +25,8 @@ async def generate_stress_meter(
     
     recent_transactions = db.query(Transaction).filter(
         Transaction.user_id == current_user.user_id,
-        Transaction.date >= time_limit
+        Transaction.is_deleted == False,
+        Transaction.transaction_date >= time_limit
     ).all()
 
     active_goals = db.query(Goal).filter(

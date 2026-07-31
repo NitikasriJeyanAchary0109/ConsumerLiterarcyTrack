@@ -31,7 +31,7 @@ def get_educator_analytics(
     average_savings = total_savings / Decimal(str(total_students)) if total_students > 0 else Decimal("0.00")
 
     # Count total student transactions processed
-    total_txs = db.query(func.count(Transaction.trans_id)).join(User, Transaction.user_id == User.user_id).filter(User.role == "student").scalar() or 0
+    total_txs = db.query(func.count(Transaction.id)).join(User, Transaction.user_id == User.user_id).filter(User.role == "student", Transaction.is_deleted == False).scalar() or 0
 
     # Retrieve recent AI insights / chat questions across all student accounts to observe literacy topics/trends
     recent_insights = db.query(ChatHistory).join(User, ChatHistory.user_id == User.user_id).filter(User.role == "student").order_by(ChatHistory.created_at.desc()).limit(5).all()

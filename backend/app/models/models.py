@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     JSON,
+    Boolean,
 )
 
 from sqlalchemy.orm import relationship
@@ -208,7 +209,7 @@ class SecurityEvent(Base):
 class Goal(Base):
     __tablename__ = "goals"
 
-    goal_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
         Integer,
@@ -216,24 +217,36 @@ class Goal(Base):
         nullable=False,
     )
 
-    goal_name = Column(String, nullable=False)
+    title = Column(String, nullable=False)
 
-    target = Column(
+    target_amount = Column(
         Numeric(precision=12, scale=2),
         nullable=False,
     )
 
-    saved = Column(
+    current_amount = Column(
         Numeric(precision=12, scale=2),
         default=0.00,
         nullable=False,
     )
 
-    deadline = Column(DateTime)
+    target_date = Column(DateTime)
 
     status = Column(
         String,
         default="active",
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
         nullable=False,
     )
 
@@ -250,7 +263,7 @@ class Goal(Base):
 class Savings(Base):
     __tablename__ = "savings"
 
-    save_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
         Integer,
@@ -260,13 +273,13 @@ class Savings(Base):
 
     goal_id = Column(
         Integer,
-        ForeignKey("goals.goal_id"),
+        ForeignKey("goals.id"),
         nullable=True,
     )
 
     triggered_by_transaction_id = Column(
         Integer,
-        ForeignKey("transactions.trans_id"),
+        ForeignKey("transactions.id"),
         nullable=True,
     )
 
@@ -280,7 +293,7 @@ class Savings(Base):
         nullable=False,
     )
 
-    date = Column(
+    created_at = Column(
         DateTime,
         default=datetime.datetime.utcnow,
         nullable=False,
@@ -423,7 +436,7 @@ class FinancialHealth(Base):
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    trans_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
         Integer,
@@ -444,9 +457,34 @@ class Transaction(Base):
 
     description = Column(String)
 
-    date = Column(
+    transaction_date = Column(
         DateTime,
         default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    round_up_amount = Column(
+        Numeric(12, 2),
+        default=0.00,
+        nullable=False,
+    )
+
+    is_round_up_applied = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False,
     )
 
     user = relationship(
@@ -478,7 +516,7 @@ class Budget(Base):
 
     trans_id = Column(
         Integer,
-        ForeignKey("transactions.trans_id", ondelete="CASCADE"),
+        ForeignKey("transactions.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -568,7 +606,7 @@ class AuditLog(Base):
 
     trans_id = Column(
         Integer,
-        ForeignKey("transactions.trans_id", ondelete="CASCADE"),
+        ForeignKey("transactions.id", ondelete="CASCADE"),
         nullable=False,
     )
 
