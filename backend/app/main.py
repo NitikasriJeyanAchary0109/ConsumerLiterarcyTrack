@@ -21,6 +21,7 @@ from app.routers import (
     educator,
     savings,
     budgets,
+    coach,          # feat-aimodel: AI Coach router
 )
 
 
@@ -29,8 +30,8 @@ from app.routers import (
 # ==========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if settings.ENVIRONMENT == "development":
-        Base.metadata.create_all(bind=engine)
+    # Ensure database tables exist
+    Base.metadata.create_all(bind=engine)
 
     yield
 
@@ -76,7 +77,7 @@ app.add_middleware(
 # Health Check
 # ==========================
 @app.get("/api/health")
-def healthcheck(db: Session = Depends(get_db)):
+async def healthcheck(db: Session = Depends(get_db)):
     db_status = "healthy"
 
     try:
@@ -98,17 +99,18 @@ def healthcheck(db: Session = Depends(get_db)):
 # ==========================
 # Routers
 # ==========================
-app.include_router(auth.router, prefix="/api")
+app.include_router(auth.router,         prefix="/api")
 app.include_router(transactions.router, prefix="/api")
-app.include_router(goals.router, prefix="/api")
-app.include_router(roundups.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
-app.include_router(negotiator.router, prefix="/api")
-app.include_router(forecast.router, prefix="/api")
-app.include_router(stress.router, prefix="/api")
-app.include_router(educator.router, prefix="/api")
-app.include_router(savings.router, prefix="/api")
-app.include_router(budgets.router, prefix="/api")
+app.include_router(goals.router,        prefix="/api")
+app.include_router(roundups.router,     prefix="/api")
+app.include_router(chat.router,         prefix="/api")
+app.include_router(negotiator.router,   prefix="/api")
+app.include_router(forecast.router,     prefix="/api")
+app.include_router(stress.router,       prefix="/api")
+app.include_router(educator.router,     prefix="/api")
+app.include_router(savings.router,      prefix="/api")
+app.include_router(budgets.router,      prefix="/api")
+app.include_router(coach.router,        prefix="/api")
 
 
 # ==========================
