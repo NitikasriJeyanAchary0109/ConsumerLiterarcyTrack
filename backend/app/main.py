@@ -20,6 +20,7 @@ from app.routers import (
     stress,
     educator,
     savings,
+    budgets,
 )
 
 
@@ -107,6 +108,7 @@ app.include_router(forecast.router, prefix="/api")
 app.include_router(stress.router, prefix="/api")
 app.include_router(educator.router, prefix="/api")
 app.include_router(savings.router, prefix="/api")
+app.include_router(budgets.router, prefix="/api")
 
 
 # ==========================

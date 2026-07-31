@@ -99,6 +99,12 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
+    budgets = relationship(
+        "Budget",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
 
 # ==========================================================
 # USER SESSION
@@ -422,11 +428,6 @@ class FinancialHealth(Base):
         back_populates="health_reports",
     )
 
-    budgets = relationship(
-        "Budget",
-        back_populates="health_report",
-        cascade="all, delete-orphan",
-    )
 
 
 # ==========================================================
@@ -492,12 +493,6 @@ class Transaction(Base):
         back_populates="transactions",
     )
 
-    budgets = relationship(
-        "Budget",
-        back_populates="transaction",
-        cascade="all, delete-orphan",
-    )
-
     audit_logs = relationship(
         "AuditLog",
         back_populates="transaction",
@@ -512,18 +507,13 @@ class Transaction(Base):
 class Budget(Base):
     __tablename__ = "budgets"
 
-    budget_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
-    trans_id = Column(
+    user_id = Column(
         Integer,
-        ForeignKey("transactions.id", ondelete="CASCADE"),
+        ForeignKey("users.user_id", ondelete="CASCADE"),
         nullable=False,
-    )
-
-    report_id = Column(
-        Integer,
-        ForeignKey("financial_health.report_id", ondelete="CASCADE"),
-        nullable=False,
+        index=True,
     )
 
     category = Column(String, nullable=False)
@@ -533,20 +523,28 @@ class Budget(Base):
         nullable=False,
     )
 
-    spent = Column(
-        Numeric(12, 2),
-        default=0.00,
-    )
-
     period = Column(String, nullable=False)
 
-    transaction = relationship(
-        "Transaction",
-        back_populates="budgets",
+    start_date = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
     )
 
-    health_report = relationship(
-        "FinancialHealth",
+    created_at = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    user = relationship(
+        "User",
         back_populates="budgets",
     )
 
@@ -568,7 +566,7 @@ class AIRecommendation(Base):
 
     budget_id = Column(
         Integer,
-        ForeignKey("budgets.budget_id", ondelete="CASCADE"),
+        ForeignKey("budgets.id", ondelete="CASCADE"),
         nullable=False,
     )
 
