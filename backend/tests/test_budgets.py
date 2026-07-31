@@ -19,9 +19,6 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
-mock_user = None
-
-
 def get_testing_db():
     db = TestingSessionLocal()
     try:
@@ -31,9 +28,24 @@ def get_testing_db():
 
 
 def override_require_student():
-    if not mock_user:
-        raise Exception("Mock user not initialized")
-    return mock_user
+    db = TestingSessionLocal()
+    try:
+        user = db.query(User).filter(User.user_id == 1).first()
+        if user is None:
+            user = User(
+                user_id=1,
+                full_name="Test Student",
+                email="student@test.com",
+                role="student",
+                created_at=datetime.datetime.utcnow(),
+                updated_at=datetime.datetime.utcnow(),
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+    finally:
+        db.close()
 
 
 app.dependency_overrides[get_db] = get_testing_db
@@ -44,13 +56,16 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_database():
+    app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = get_testing_db
+    app.dependency_overrides[require_student] = override_require_student
+
     db = TestingSessionLocal()
     db.query(Transaction).delete()
     db.query(Budget).delete()
     db.query(User).delete()
 
-    global mock_user
-    mock_user = User(
+    user = User(
         user_id=1,
         full_name="Test Student",
         email="student@test.com",
@@ -58,9 +73,9 @@ def setup_database():
         created_at=datetime.datetime.utcnow(),
         updated_at=datetime.datetime.utcnow(),
     )
-    db.add(mock_user)
+    db.add(user)
     db.commit()
-    db.refresh(mock_user)
+    db.refresh(user)
     db.close()
     yield
 
