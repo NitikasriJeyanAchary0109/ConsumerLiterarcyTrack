@@ -13,8 +13,6 @@ import HomeScreen from "../screens/student/HomeScreen";
 import GoalsScreen from "../screens/student/GoalsScreen";
 import CoachScreen from "../screens/student/CoachScreen";
 import InsightsScreen from "../screens/student/InsightsScreen";
-import BankConnectScreen from "../screens/student/BankConnectScreen";
-import TransactionListScreen from "../screens/student/TransactionListScreen";
 
 // Educator Screens
 import OverviewScreen from "../screens/educator/OverviewScreen";
@@ -24,12 +22,11 @@ import LiteracyScreen from "../screens/educator/LiteracyScreen";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Custom theme option helper
 const screenOptions = {
   headerStyle: {
-    backgroundColor: "#1e293b", // card color
+    backgroundColor: "#1e293b",
   },
-  headerTintColor: "#f8fafc",   // text color
+  headerTintColor: "#f8fafc",
   headerTitleStyle: {
     fontWeight: "bold" as const,
   },
@@ -40,111 +37,97 @@ const screenOptions = {
     paddingTop: 5,
     height: 60,
   },
-  tabBarActiveTintColor: "#6366f1",   // Indigo active
-  tabBarInactiveTintColor: "#94a3b8", // Slate inactive
+  tabBarActiveTintColor: "#6366f1",
+  tabBarInactiveTintColor: "#94a3b8",
 };
 
-// ==========================================
-// STUDENT NAVIGATION (Tabs)
-// ==========================================
+// ==========================
+// STUDENT TABS
+// ==========================
 function StudentTabs() {
   return (
     <Tab.Navigator screenOptions={screenOptions}>
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ title: "Home Swipes", tabBarLabel: "Home" }} 
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: "Home Swipes", tabBarLabel: "Home" }}
       />
-      <Tab.Screen 
-        name="Goals" 
-        component={GoalsScreen} 
-        options={{ title: "My Savings Goals", tabBarLabel: "Goals" }} 
+      <Tab.Screen
+        name="Goals"
+        component={GoalsScreen}
+        options={{ title: "My Savings Goals", tabBarLabel: "Goals" }}
       />
-      <Tab.Screen 
-        name="Coach" 
-        component={CoachScreen} 
-        options={{ title: "Coach Coach", tabBarLabel: "Coach", headerShown: false }} 
+      <Tab.Screen
+        name="Coach"
+        component={CoachScreen}
+        options={{
+          title: "Coach",
+          tabBarLabel: "Coach",
+          headerShown: false,
+        }}
       />
-      <Tab.Screen 
-        name="Insights" 
-        component={InsightsScreen} 
-        options={{ title: "Wellness insights", tabBarLabel: "Insights" }} 
+      <Tab.Screen
+        name="Insights"
+        component={InsightsScreen}
+        options={{
+          title: "Wellness Insights",
+          tabBarLabel: "Insights",
+        }}
       />
     </Tab.Navigator>
   );
 }
 
-// ==========================================
-// STUDENT NAVIGATION STACK (Nests Tabs + Banking Screens)
-// ==========================================
-const StudentStackNavigator = createNativeStackNavigator();
-
-function StudentStackScreen() {
-  return (
-    <StudentStackNavigator.Navigator>
-      <StudentStackNavigator.Screen 
-        name="StudentTabs" 
-        component={StudentTabs} 
-        options={{ headerShown: false }} 
-      />
-      <StudentStackNavigator.Screen 
-        name="BankConnect" 
-        component={BankConnectScreen} 
-        options={{ 
-          title: "Link Bank Statement",
-          headerStyle: { backgroundColor: "#1e293b" },
-          headerTintColor: "#f8fafc",
-          headerTitleStyle: { fontWeight: "bold" }
-        }} 
-      />
-      <StudentStackNavigator.Screen 
-        name="TransactionList" 
-        component={TransactionListScreen} 
-        options={{ 
-          title: "Transactions",
-          headerStyle: { backgroundColor: "#1e293b" },
-          headerTintColor: "#f8fafc",
-          headerTitleStyle: { fontWeight: "bold" }
-        }} 
-      />
-    </StudentStackNavigator.Navigator>
-  );
-}
-
-// ==========================================
-// EDUCATOR NAVIGATION (Tabs)
-// ==========================================
+// ==========================
+// EDUCATOR TABS
+// ==========================
 function EducatorTabs() {
   return (
     <Tab.Navigator screenOptions={screenOptions}>
-      <Tab.Screen 
-        name="Overview" 
-        component={OverviewScreen} 
-        options={{ title: "Overview Dashboard", tabBarLabel: "Overview" }} 
+      <Tab.Screen
+        name="Overview"
+        component={OverviewScreen}
+        options={{
+          title: "Overview Dashboard",
+          tabBarLabel: "Overview",
+        }}
       />
-      <Tab.Screen 
-        name="Trends" 
-        component={TrendsScreen} 
-        options={{ title: "Cohort Trends", tabBarLabel: "Trends" }} 
+      <Tab.Screen
+        name="Trends"
+        component={TrendsScreen}
+        options={{
+          title: "Cohort Trends",
+          tabBarLabel: "Trends",
+        }}
       />
-      <Tab.Screen 
-        name="Literacy" 
-        component={LiteracyScreen} 
-        options={{ title: "Oversight Log", tabBarLabel: "Oversight" }} 
+      <Tab.Screen
+        name="Literacy"
+        component={LiteracyScreen}
+        options={{
+          title: "Oversight Log",
+          tabBarLabel: "Oversight",
+        }}
       />
     </Tab.Navigator>
   );
 }
 
-// ==========================================
+// ==========================
 // ROOT NAVIGATOR
-// ==========================================
+// ==========================
 export const RootNavigator = () => {
   const { userToken, userRole, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-slate-900 justify-center items-center">
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#0f172a",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
         <ActivityIndicator size="large" color="#6366f1" />
       </View>
     );
@@ -153,17 +136,20 @@ export const RootNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {userToken === null ? (
-        // Unauthenticated Flows
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
       ) : userRole === "educator" ? (
-        // Educator Flow
-        <Stack.Screen name="EducatorHome" component={EducatorTabs} />
+        <Stack.Screen
+          name="EducatorHome"
+          component={EducatorTabs}
+        />
       ) : (
-        // Student Flow
-        <Stack.Screen name="StudentHome" component={StudentStackScreen} />
+        <Stack.Screen
+          name="StudentHome"
+          component={StudentTabs}
+        />
       )}
     </Stack.Navigator>
   );
