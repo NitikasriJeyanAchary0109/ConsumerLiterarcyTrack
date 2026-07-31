@@ -1,14 +1,34 @@
-import React from "react";
-import { View, Text, Pressable, SafeAreaView, StyleSheet, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Pressable, SafeAreaView, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { apiService } from "../../services/api";
 
 export const GoalDetailScreen = ({ route, navigation }: { route: any; navigation: any }) => {
   const goal = route?.params?.goal || { goal_name: "🏠 Home", target: 50000, saved: 34000, deadline: new Date().toISOString() };
+  const [forecast, setForecast] = useState<any>(null);
+  const [loadingForecast, setLoadingForecast] = useState(false);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  const goalId = goal.goal_id || goal.id || 1;
+
+  useEffect(() => {
+    const fetchForecast = async () => {
+      try {
+        setLoadingForecast(true);
+        const res = await apiService.getGoalForecast(goalId);
+        setForecast(res);
+      } catch (e) {
+        console.warn("Failed to fetch goal forecast:", e);
+      } finally {
+        setLoadingForecast(false);
+      }
+    };
+    fetchForecast();
+  }, [goalId]);
 
   const target = Number(goal.target) || 1;
   const saved = Number(goal.saved) || 0;
@@ -101,6 +121,37 @@ export const GoalDetailScreen = ({ route, navigation }: { route: any; navigation
               </View>
             )}
           </View>
+        </View>
+
+        {/* Dream Engine AI Forecast */}
+        <View style={styles.card} className="bg-white rounded-3xl p-5 border border-slate-100 mb-6">
+          <View className="flex-row items-center space-x-2.5 mb-3">
+            <MaterialIcons name="smart-toy" size={20} color="#005bbf" />
+            <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-base text-slate-800 font-bold">
+              Dream Engine AI
+            </Text>
+          </View>
+          {loadingForecast ? (
+            <ActivityIndicator size="small" color="#005bbf" className="py-4" />
+          ) : forecast ? (
+            <View className="space-y-3">
+              <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-xs text-slate-600 leading-relaxed">
+                {forecast.narrative}
+              </Text>
+              {forecast.forecast_date && (
+                <View className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex-row items-center space-x-2">
+                  <MaterialIcons name="event-available" size={16} color="#005bbf" />
+                  <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[11px] text-blue-800 font-medium">
+                    Projected Target: {new Date(forecast.forecast_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-xs text-slate-400">
+              No forecast narrative available for this goal yet. Keep saving to build a savings timeline!
+            </Text>
+          )}
         </View>
 
         {/* Withdrawal action box */}

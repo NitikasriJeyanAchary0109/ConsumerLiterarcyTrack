@@ -1,11 +1,13 @@
 import React from "react";
 import { View, Text, Pressable, SafeAreaView, StyleSheet, ScrollView, Alert, Image } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../../hooks/useAuth";
 
 export const ProfileScreen = () => {
   const { logout, userRole } = useAuth();
+  const navigation = useNavigation<any>();
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -59,10 +61,30 @@ export const ProfileScreen = () => {
 
         {/* Options list */}
         <View style={styles.card} className="bg-white rounded-3xl border border-slate-100 p-4 mb-6">
-          <Pressable onPress={triggerHaptic} className="flex-row justify-between items-center py-3.5 border-b border-slate-50">
+          <Pressable 
+            onPress={() => {
+              triggerHaptic();
+              navigation.navigate("Notifications");
+            }} 
+            className="flex-row justify-between items-center py-3.5 border-b border-slate-50"
+          >
             <View className="flex-row items-center space-x-3">
               <MaterialIcons name="notifications-none" size={20} color="#64748b" />
               <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-slate-700 text-sm font-bold">Notifications</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color="#94a3b8" />
+          </Pressable>
+
+          <Pressable 
+            onPress={() => {
+              triggerHaptic();
+              navigation.navigate("Budgets");
+            }} 
+            className="flex-row justify-between items-center py-3.5 border-b border-slate-50"
+          >
+            <View className="flex-row items-center space-x-3">
+              <MaterialIcons name="pie-chart" size={20} color="#64748b" />
+              <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-slate-700 text-sm font-bold">Budgets & Limits</Text>
             </View>
             <MaterialIcons name="chevron-right" size={20} color="#94a3b8" />
           </Pressable>

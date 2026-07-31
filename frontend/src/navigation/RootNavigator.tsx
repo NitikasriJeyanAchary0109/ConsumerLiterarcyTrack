@@ -26,6 +26,8 @@ import SubscriptionNegotiatorScreen from "../screens/student/SubscriptionNegotia
 import RoundupTrackerScreen from "../screens/student/RoundupTrackerScreen";
 import EmergencyWithdrawalScreen from "../screens/student/EmergencyWithdrawalScreen";
 import ProfileScreen from "../screens/student/ProfileScreen";
+import NotificationsScreen from "../screens/student/NotificationsScreen";
+import BudgetsScreen from "../screens/student/BudgetsScreen";
 
 // Educator Screens
 import OverviewScreen from "../screens/educator/OverviewScreen";
@@ -132,6 +134,14 @@ function StudentStackScreen() {
       <StudentStackNavigator.Screen 
         name="EmergencyWithdrawal" 
         component={EmergencyWithdrawalScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="Notifications" 
+        component={NotificationsScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="Budgets" 
+        component={BudgetsScreen} 
       />
     </StudentStackNavigator.Navigator>
   );

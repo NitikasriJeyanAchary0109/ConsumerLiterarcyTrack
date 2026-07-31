@@ -45,7 +45,7 @@ api.interceptors.response.use(
   }
 );
 
-// API call methods
+// API call methods with adapter mapping between frontend and backend models
 export const apiService = {
   // Onboarding & Pattern Detection
   postManualSalary: async (data: { monthly_income: number; recurring_expenses: number }) => {
@@ -53,7 +53,6 @@ export const apiService = {
       const response = await api.post("/onboarding/salary", data);
       return response.data;
     } catch (e) {
-      // Fallback response for unauthenticated/demo mode
       return { success: true, monthly_income: data.monthly_income };
     }
   },
@@ -62,7 +61,6 @@ export const apiService = {
       const response = await api.get("/onboarding/detect");
       return response.data;
     } catch (e) {
-      // Fallback mock data if backend pattern detector is unauthenticated
       return {
         detected_income: 35000,
         subscriptions: [
@@ -81,39 +79,96 @@ export const apiService = {
   },
 
   // Transactions
-  getTransactions: async () => {
-    const response = await api.get("/transactions/");
-    return response.data;
+  getTransactions: async (search?: string) => {
+    const params = search ? { search } : {};
+    const response = await api.get("/transactions/", { params });
+    return response.data.map((t: any) => ({
+      trans_id: t.id,
+      user_id: t.user_id,
+      amount: Number(t.amount),
+      category: t.category,
+      merchant: t.merchant,
+      type: t.type,
+      date: t.transaction_date,
+      description: t.description
+    }));
   },
   createTransaction: async (data: { amount: number; category: string; merchant: string; type: string; description?: string }) => {
-    const response = await api.post("/transactions/", data);
-    return response.data;
+    const payload = {
+      amount: data.amount,
+      category: data.category,
+      merchant: data.merchant,
+      type: data.type,
+      description: data.description
+    };
+    const response = await api.post("/transactions/", payload);
+    const t = response.data.transaction;
+    return {
+      trans_id: t.id,
+      user_id: t.user_id,
+      amount: Number(t.amount),
+      category: t.category,
+      merchant: t.merchant,
+      type: t.type,
+      date: t.transaction_date,
+      description: t.description
+    };
   },
   uploadStatement: async (formData: FormData) => {
-    try {
-      const response = await api.post("/transactions/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response.data;
-    } catch (e) {
-      return { success: true, message: "File uploaded successfully" };
-    }
+    const response = await api.post("/transactions/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
   },
 
   // Goals
   getGoals: async () => {
     const response = await api.get("/goals/");
-    return response.data;
+    return response.data.map((g: any) => ({
+      goal_id: g.id,
+      user_id: g.user_id,
+      goal_name: g.title,
+      target: Number(g.target_amount),
+      saved: Number(g.current_amount),
+      deadline: g.target_date
+    }));
   },
   createGoal: async (data: { goal_name: string; target: number; deadline?: string }) => {
-    const response = await api.post("/goals/", data);
-    return response.data;
+    const payload = {
+      title: data.goal_name,
+      target_amount: data.target,
+      target_date: data.deadline ? new Date(data.deadline).toISOString() : null
+    };
+    const response = await api.post("/goals/", payload);
+    const g = response.data;
+    return {
+      goal_id: g.id,
+      user_id: g.user_id,
+      goal_name: g.title,
+      target: Number(g.target_amount),
+      saved: Number(g.current_amount),
+      deadline: g.target_date
+    };
   },
   updateGoal: async (goalId: number, data: any) => {
-    const response = await api.put(`/goals/${goalId}`, data);
-    return response.data;
+    const payload: any = {};
+    if (data.goal_name !== undefined) payload.title = data.goal_name;
+    if (data.target !== undefined) payload.target_amount = data.target;
+    if (data.saved !== undefined) payload.current_amount = data.saved;
+    if (data.deadline !== undefined) payload.target_date = data.deadline;
+    
+    const response = await api.put(`/goals/${goalId}`, payload);
+    const g = response.data;
+    return {
+      goal_id: g.id,
+      user_id: g.user_id,
+      goal_name: g.title,
+      target: Number(g.target_amount),
+      saved: Number(g.current_amount),
+      deadline: g.target_date
+    };
   },
   deleteGoal: async (goalId: number) => {
     const response = await api.delete(`/goals/${goalId}`);
@@ -127,6 +182,10 @@ export const apiService = {
       return { success: true, withdrawn: data.amount, message: "Withdrawal completed" };
     }
   },
+  getGoalForecast: async (goalId: number) => {
+    const response = await api.get(`/goals/${goalId}/forecast`);
+    return response.data;
+  },
 
   // Roundups
   getRoundups: async () => {
@@ -135,6 +194,48 @@ export const apiService = {
   },
   getRoundupStats: async () => {
     const response = await api.get("/roundups/stats");
+    return response.data;
+  },
+
+  // Savings (manual additions)
+  manualSave: async (data: { amount: number; goal_id?: number }) => {
+    const response = await api.post("/savings/manual", data);
+    return response.data;
+  },
+
+  // Budgets
+  getBudgets: async () => {
+    const response = await api.get("/budgets/");
+    return response.data.map((b: any) => ({
+      budget_id: b.id,
+      category: b.category,
+      limit_amount: Number(b.limit_amount),
+      spent: Number(b.spent_amount),
+      period: b.period
+    }));
+  },
+  getBudgetsStatus: async () => {
+    const response = await api.get("/budgets/status");
+    return response.data;
+  },
+  createBudget: async (data: { category: string; limit_amount: number; period?: "weekly" | "monthly" }) => {
+    const payload = {
+      category: data.category,
+      limit_amount: data.limit_amount,
+      period: data.period || "monthly"
+    };
+    const response = await api.post("/budgets/", payload);
+    return response.data;
+  },
+  updateBudget: async (budgetId: number, data: { limit_amount?: number; period?: "weekly" | "monthly" }) => {
+    const payload: any = {};
+    if (data.limit_amount !== undefined) payload.limit_amount = data.limit_amount;
+    if (data.period !== undefined) payload.period = data.period;
+    const response = await api.put(`/budgets/${budgetId}`, payload);
+    return response.data;
+  },
+  deleteBudget: async (budgetId: number) => {
+    const response = await api.delete(`/budgets/${budgetId}`);
     return response.data;
   },
 
@@ -184,8 +285,8 @@ export const apiService = {
       };
     }
   },
-  negotiatePurchase: async (data: { item_name: string; item_price: number; category: string }) => {
-    const response = await api.post("/negotiator/", data);
+  evaluatePurchase: async (data: { price: number; category: string; description: string }) => {
+    const response = await api.post("/negotiator/evaluate", data);
     return response.data;
   },
   forecastSavings: async (data: { goal_id: number; monthly_contribution: number }) => {
@@ -193,13 +294,37 @@ export const apiService = {
     return response.data;
   },
   getStressMeter: async (timeframe_days: number = 30) => {
-    const response = await api.post("/stress/", { timeframe_days });
+    const response = await api.post("/wellness/score", { timeframe_days });
+    return response.data;
+  },
+
+  // Notifications
+  getNotifications: async () => {
+    const response = await api.get("/notifications/");
+    return response.data;
+  },
+  markNotificationRead: async (notifId: number) => {
+    const response = await api.patch(`/notifications/${notifId}/read`);
     return response.data;
   },
 
   // Educator
   getEducatorAnalytics: async () => {
     const response = await api.get("/educator/analytics");
+    return response.data;
+  },
+  getEducatorOverview: async () => {
+    const response = await api.get("/educator/overview");
+    return response.data;
+  },
+  getEducatorTrends: async () => {
+    const response = await api.get("/educator/trends");
+    return response.data;
+  },
+
+  // Google OAuth direct exchange
+  googleLoginPost: async (data: { email: string; full_name: string; oauth_id: string }) => {
+    const response = await api.post("/auth/google", data);
     return response.data;
   },
 };

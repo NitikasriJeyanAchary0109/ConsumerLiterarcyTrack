@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TextInput, Alert, ActivityIndicator, TouchableOpacity, RefreshControl } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "../../hooks/useAuth";
 import { useIsFocused } from "@react-navigation/native";
 import { apiService } from "../../services/api";
@@ -9,6 +11,9 @@ import { Transaction } from "../../types";
 
 export const HomeScreen = ({ navigation }: { navigation: any }) => {
   const { logout } = useAuth();
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -188,9 +193,24 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
         </View>
       )}
 
+      {/* AI Purchase Negotiator Banner */}
+      <TouchableOpacity 
+        onPress={() => {
+          triggerHaptic();
+          navigation.navigate("SubscriptionNegotiator");
+        }}
+        className="bg-indigo-500/15 border border-indigo-500/30 p-4 rounded-2xl mb-6 flex-row justify-between items-center"
+      >
+        <View className="flex-1 pr-2">
+          <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-indigo-400 text-sm">🤔 Thinking of buying something?</Text>
+          <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-400 text-xs mt-1">Let SpareChange AI evaluate the delay it will cause to your savings goals.</Text>
+        </View>
+        <MaterialIcons name="chevron-right" size={20} color="#6366f1" />
+      </TouchableOpacity>
+
       {/* Log Transaction Section */}
       <Card className="mb-6">
-        <Text className="text-slate-100 text-lg font-bold mb-4">Simulate card swipe / purchase</Text>
+        <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-slate-100 text-lg mb-4">Simulate card swipe / purchase</Text>
         
         <View className="flex-row gap-x-4 mb-3">
           <View className="flex-1">
