@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from decimal import Decimal
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.models import Budget, Transaction, User
@@ -12,7 +13,7 @@ from app.middleware.auth_middleware import require_student
 router = APIRouter(prefix="/budgets", tags=["Budgets"])
 
 
-def _get_period_bounds(period: str, start_date: datetime | None = None):
+def _get_period_bounds(period: str, start_date: Optional[datetime] = None):
     if period not in {"weekly", "monthly"}:
         raise HTTPException(status_code=400, detail="period must be either weekly or monthly")
 
@@ -29,15 +30,13 @@ def _get_period_bounds(period: str, start_date: datetime | None = None):
     return start, end
 
 
-def _serialize_budget(budget: Budget, db: Session) -> dict:
-    start_date = budget.start_date or datetime.utcnow()
-    start, end = _get_period_bounds(budget.period, start_date)
-
+def calculate_spent_amount(db: Session, user_id: int, category: str, period: str, start_date: Optional[datetime] = None) -> Decimal:
+    start, end = _get_period_bounds(period, start_date)
     spent_amount = (
         db.query(Transaction.amount)
         .filter(
-            Transaction.user_id == budget.user_id,
-            Transaction.category == budget.category,
+            Transaction.user_id == user_id,
+            Transaction.category == category,
             Transaction.is_deleted == False,
             Transaction.transaction_date >= start,
             Transaction.transaction_date <= end,
@@ -50,6 +49,12 @@ def _serialize_budget(budget: Budget, db: Session) -> dict:
         if raw_value is None:
             continue
         spent_total += Decimal(str(raw_value))
+    return spent_total
+
+
+def _serialize_budget(budget: Budget, db: Session) -> dict:
+    start_date = budget.start_date or datetime.utcnow()
+    spent_total = calculate_spent_amount(db, budget.user_id, budget.category, budget.period, start_date)
 
     remaining_amount = Decimal(str(budget.limit_amount)) - spent_total
     is_over_limit = spent_total > Decimal(str(budget.limit_amount))
@@ -119,6 +124,50 @@ def list_budgets(
         .all()
     )
     return [_serialize_budget(budget, db) for budget in budgets]
+
+
+class BudgetStatusResponse(BaseModel):
+    total_budgeted: Decimal
+    total_spent: Decimal
+    remaining: Decimal
+    over_limit_categories_count: int
+    budgets: List[dict]
+
+
+@router.get("/status", response_model=BudgetStatusResponse)
+def get_budgets_status(
+    current_user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+):
+    """Retrieves aggregated status of all active budgets for the student."""
+    budgets = (
+        db.query(Budget)
+        .filter(Budget.user_id == current_user.user_id, Budget.is_deleted == False)
+        .all()
+    )
+
+    serialized_budgets = []
+    total_budgeted = Decimal("0.00")
+    total_spent = Decimal("0.00")
+    over_limit_count = 0
+
+    for b in budgets:
+        serialized = _serialize_budget(b, db)
+        serialized_budgets.append(serialized)
+        total_budgeted += Decimal(str(serialized["limit_amount"]))
+        total_spent += Decimal(str(serialized["spent_amount"]))
+        if serialized["is_over_limit"]:
+            over_limit_count += 1
+
+    remaining = total_budgeted - total_spent
+
+    return {
+        "total_budgeted": total_budgeted.quantize(Decimal("0.01")),
+        "total_spent": total_spent.quantize(Decimal("0.01")),
+        "remaining": remaining.quantize(Decimal("0.01")),
+        "over_limit_categories_count": over_limit_count,
+        "budgets": serialized_budgets,
+    }
 
 
 @router.get("/{budget_id}", response_model=BudgetResponse)

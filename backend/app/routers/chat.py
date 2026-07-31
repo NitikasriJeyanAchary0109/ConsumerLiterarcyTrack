@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 import datetime
 
 from app.database import get_db
-from app.models.models import User, ChatHistory, Transaction, Goal
+from app.models.models import User, ChatHistory
 from app.schemas.schemas import ChatRequest, ChatHistoryResponse
 from app.middleware.auth_middleware import require_student
-from app.services.ai_service import call_ai, build_coach_prompt
+from app.services.ai_engine import call_llama, AIEngineError
+from app.utils.prompts import coach_system_prompt, coach_user_prompt
+from app.routers.coach import _load_context
 
 router = APIRouter(prefix="/chat", tags=["AI Coach"])
 
@@ -18,39 +20,38 @@ async def chat_with_coach(
 ):
     """
     Interacts with the AI Financial Coach.
-    Builds context from recent transactions and savings goals, then invokes the AI model.
+    Builds context from recent transactions, savings goals, and budgets, then invokes the AI model.
     Logs conversation to the ChatHistory table.
     """
-    # Build context from database
-    recent_transactions = db.query(Transaction).filter(
-        Transaction.user_id == current_user.user_id,
-        Transaction.is_deleted == False
-    ).order_by(Transaction.transaction_date.desc()).limit(5).all()
+    # 1. Load context
+    recent_transactions, goals, budgets = _load_context(current_user.user_id, db)
 
-    active_goals = db.query(Goal).filter(
-        Goal.user_id == current_user.user_id
-    ).all()
+    # 2. Build prompts
+    sys_prompt  = coach_system_prompt()
+    user_prompt = coach_user_prompt(
+        message=request.message,
+        recent_transactions=recent_transactions,
+        goals=goals,
+        budgets=budgets,
+    )
 
-    context = {
-        "recent_purchases": [
-            {"amount": float(t.amount), "merchant": t.merchant, "category": t.category}
-            for t in recent_transactions
-        ],
-        "goals": [
-            {"title": g.goal_name, "target": float(g.target), "current": float(g.saved)}
-            for g in active_goals
-        ]
-    }
+    # 3. Call LLM (raises AIEngineError on failure)
+    try:
+        ai_reply = await call_llama(
+            system_prompt=sys_prompt,
+            user_prompt=user_prompt,
+        )
+    except AIEngineError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI coach is temporarily offline. Try again in a moment."
+        ) from exc
 
-    # Build prompt and run
-    prompt = build_coach_prompt(request.message, current_user.full_name, context)
-    ai_response_text = await call_ai(prompt)
-
-    # Save to ChatHistory
+    # 4. Save to ChatHistory
     chat_record = ChatHistory(
         user_id=current_user.user_id,
         question=request.message,
-        response=ai_response_text,
+        response=ai_reply,
         created_at=datetime.datetime.utcnow()
     )
     db.add(chat_record)

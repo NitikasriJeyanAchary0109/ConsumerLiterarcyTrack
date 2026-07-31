@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import datetime
 from typing import Optional
+from pydantic import BaseModel
 
 from authlib.integrations.starlette_client import OAuth
 from starlette.middleware.sessions import SessionMiddleware
@@ -248,3 +249,59 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 def read_users_me(current_user: User = Depends(get_current_user)):
     """Returns the authenticated user's details."""
     return current_user
+
+
+class GoogleAuthRequest(BaseModel):
+    email: str
+    full_name: str
+    oauth_id: str
+
+
+@router.post("/google", response_model=Token)
+def google_auth_post(
+    request: Request,
+    auth_data: GoogleAuthRequest,
+    db: Session = Depends(get_db)
+):
+    """Exchanges Google OAuth profile data for a backend JWT token."""
+    email = auth_data.email
+    full_name = auth_data.full_name
+    oauth_id = auth_data.oauth_id
+    
+    # Check if user already exists
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        # Create a new student user
+        user = User(
+            full_name=full_name,
+            email=email,
+            password_hash=None,  # No password for OAuth users
+            role="student",      # Default signup role
+            oauth_provider="google",
+            oauth_id=oauth_id,
+            created_at=datetime.datetime.utcnow(),
+            updated_at=datetime.datetime.utcnow()
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        # Update oauth details if not set
+        if not user.oauth_provider:
+            user.oauth_provider = "google"
+            user.oauth_id = oauth_id
+            db.commit()
+            db.refresh(user)
+
+    # Log session and event
+    log_login_session(db, user, request)
+
+    # Generate access token
+    access_token = create_access_token(
+        data={"sub": user.email, "role": user.role, "user_id": user.user_id}
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "role": user.role
+    }
