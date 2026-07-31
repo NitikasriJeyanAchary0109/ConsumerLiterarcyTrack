@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Literal
 from decimal import Decimal
 from datetime import datetime, date
 
@@ -104,19 +104,31 @@ class GoalDetailResponse(GoalResponse):
 # ==========================================
 class SavingsBase(BaseModel):
     amount: Decimal
-    source: str
-    date: Optional[datetime] = None
+    source: Literal["round_up", "manual", "transfer"]
+    goal_id: Optional[int] = None
 
 class SavingsCreate(SavingsBase):
     pass
 
+class SavingsUpdate(BaseModel):
+    amount: Optional[Decimal] = None
+    source: Optional[Literal["round_up", "manual", "transfer"]] = None
+    goal_id: Optional[int] = None
+
 class SavingsResponse(SavingsBase):
-    save_id: int
+    id: int
     user_id: int
-    date: datetime
+    created_at: datetime
+    triggered_by_transaction_id: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+class SavingsSummaryResponse(BaseModel):
+    total_saved: Decimal
+    saved_this_month: Decimal
+    saved_via_roundup: Decimal
+    saved_via_manual: Decimal
 
 
 # ==========================================

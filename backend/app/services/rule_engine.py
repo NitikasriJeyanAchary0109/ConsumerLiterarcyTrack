@@ -208,6 +208,33 @@ def savings_velocity(
     monthly_rate = daily_rate * Decimal("30")
     return monthly_rate.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+def savings_summary(savings_list) -> dict:
+    import datetime
+    now = datetime.datetime.utcnow()
+    this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    total = Decimal("0.00")
+    this_month_total = Decimal("0.00")
+    roundup_total = Decimal("0.00")
+    manual_total = Decimal("0.00")
+    
+    for s in savings_list:
+        total += s.amount
+        if getattr(s, 'created_at', None) and s.created_at >= this_month:
+            this_month_total += s.amount
+            
+        if s.source == "round_up":
+            roundup_total += s.amount
+        elif s.source == "manual":
+            manual_total += s.amount
+
+    return {
+        "total_saved": total,
+        "saved_this_month": this_month_total,
+        "saved_via_roundup": roundup_total,
+        "saved_via_manual": manual_total
+    }
+
 
 # ===========================================================================
 # 4. GOAL FORECAST
@@ -400,8 +427,8 @@ def apply_roundup_if_eligible(
         goal_id=goal.goal_id,
         triggered_by_transaction_id=transaction.id,
         amount=roundup_amount,
-        source="roundup",
-        date=_dt.datetime.utcnow(),
+        source="round_up",
+        created_at=_dt.datetime.utcnow(),
     )
     db.add(save_record)
     db.commit()

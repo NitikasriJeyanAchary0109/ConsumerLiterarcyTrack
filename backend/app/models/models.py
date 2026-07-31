@@ -263,7 +263,7 @@ class Goal(Base):
 class Savings(Base):
     __tablename__ = "savings"
 
-    save_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
         Integer,
@@ -293,7 +293,7 @@ class Savings(Base):
         nullable=False,
     )
 
-    date = Column(
+    created_at = Column(
         DateTime,
         default=datetime.datetime.utcnow,
         nullable=False,
