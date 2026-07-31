@@ -72,11 +72,11 @@ def setup_database():
     
     # Create active goal for the user
     goal = Goal(
-        goal_id=1,
+        id=1,
         user_id=1,
-        goal_name="Emergency Fund",
-        target=Decimal("1000.00"),
-        saved=Decimal("100.00"),
+        title="Emergency Fund",
+        target_amount=Decimal("1000.00"),
+        current_amount=Decimal("100.00"),
         status="active"
     )
     db.add(goal)
@@ -117,8 +117,8 @@ def test_create_transaction_with_roundup():
     
     # Verify goal saved balance updated in database
     db = TestingSessionLocal()
-    goal = db.query(Goal).filter(Goal.goal_id == 1).first()
-    assert goal.saved == Decimal("100.40") # 100 + 0.40
+    goal = db.query(Goal).filter(Goal.id == 1).first()
+    assert goal.current_amount == Decimal("100.40") # 100 + 0.40
     
     # Verify linked Savings record created
     savings = db.query(Savings).filter(Savings.triggered_by_transaction_id == tx["id"]).first()
@@ -355,8 +355,8 @@ def test_delete_transaction_soft_delete_and_reverse_roundup():
     db.add(savings)
     
     # Adjust mock active goal saved amount to reflect the roundup addition
-    goal = db.query(Goal).filter(Goal.goal_id == 1).first()
-    goal.saved = Decimal("107.50")
+    goal = db.query(Goal).filter(Goal.id == 1).first()
+    goal.current_amount = Decimal("107.50")
     db.commit()
     db.close()
     
@@ -377,8 +377,8 @@ def test_delete_transaction_soft_delete_and_reverse_roundup():
     assert reversed_savings is None
     
     # Check Goal balance decremented/reversed
-    goal = db.query(Goal).filter(Goal.goal_id == 1).first()
-    assert goal.saved == Decimal("100.00") # 107.50 - 7.50
+    goal = db.query(Goal).filter(Goal.id == 1).first()
+    assert goal.current_amount == Decimal("100.00") # 107.50 - 7.50
     
     # Verify AuditLog logged for delete action
     audit = db.query(AuditLog).filter(AuditLog.trans_id == tx_id, AuditLog.action == "delete").first()

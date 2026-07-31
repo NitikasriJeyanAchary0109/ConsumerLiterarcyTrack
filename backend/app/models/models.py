@@ -209,7 +209,7 @@ class SecurityEvent(Base):
 class Goal(Base):
     __tablename__ = "goals"
 
-    goal_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
         Integer,
@@ -217,24 +217,36 @@ class Goal(Base):
         nullable=False,
     )
 
-    goal_name = Column(String, nullable=False)
+    title = Column(String, nullable=False)
 
-    target = Column(
+    target_amount = Column(
         Numeric(precision=12, scale=2),
         nullable=False,
     )
 
-    saved = Column(
+    current_amount = Column(
         Numeric(precision=12, scale=2),
         default=0.00,
         nullable=False,
     )
 
-    deadline = Column(DateTime)
+    target_date = Column(DateTime)
 
     status = Column(
         String,
         default="active",
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
         nullable=False,
     )
 
@@ -261,7 +273,7 @@ class Savings(Base):
 
     goal_id = Column(
         Integer,
-        ForeignKey("goals.goal_id"),
+        ForeignKey("goals.id"),
         nullable=True,
     )
 
