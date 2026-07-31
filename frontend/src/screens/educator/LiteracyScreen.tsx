@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
 import { apiService } from "../../services/api";
 import { Card } from "../../components/Card";
-import { AIInsight } from "../../types";
+import { ChatHistory } from "../../types";
 
 export const LiteracyScreen = () => {
-  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [insights, setInsights] = useState<ChatHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 

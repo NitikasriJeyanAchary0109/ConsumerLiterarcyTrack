@@ -4,15 +4,27 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useAuth } from "../hooks/useAuth";
 
-// Import Screens
+// Authentication Screens
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
+
+// Onboarding Screens
+import OnboardingScreen from "../screens/onboarding/OnboardingScreen";
+import SpendingSetupScreen from "../screens/onboarding/SpendingSetupScreen";
+import CSVUploadScreen from "../screens/onboarding/CSVUploadScreen";
+import GoalCreationScreen from "../screens/onboarding/GoalCreationScreen";
+import AnalysisScreen from "../screens/onboarding/AnalysisScreen";
 
 // Student Screens
 import HomeScreen from "../screens/student/HomeScreen";
 import GoalsScreen from "../screens/student/GoalsScreen";
-import CoachScreen from "../screens/student/CoachScreen";
+import GoalDetailScreen from "../screens/student/GoalDetailScreen";
+import ChatScreen from "../screens/student/ChatScreen";
 import InsightsScreen from "../screens/student/InsightsScreen";
+import SubscriptionNegotiatorScreen from "../screens/student/SubscriptionNegotiatorScreen";
+import RoundupTrackerScreen from "../screens/student/RoundupTrackerScreen";
+import EmergencyWithdrawalScreen from "../screens/student/EmergencyWithdrawalScreen";
+import ProfileScreen from "../screens/student/ProfileScreen";
 
 // Educator Screens
 import OverviewScreen from "../screens/educator/OverviewScreen";
@@ -42,7 +54,7 @@ const screenOptions = {
 };
 
 // ==========================
-// STUDENT TABS
+// STUDENT TABS (5 Bottom Tabs)
 // ==========================
 function StudentTabs() {
   return (
@@ -58,23 +70,69 @@ function StudentTabs() {
         options={{ title: "My Savings Goals", tabBarLabel: "Goals" }}
       />
       <Tab.Screen
-        name="Coach"
-        component={CoachScreen}
+        name="Insights"
+        component={InsightsScreen}
+        options={{ title: "Wellness Insights", tabBarLabel: "Insights" }}
+      />
+      <Tab.Screen
+        name="Chat"
+        component={ChatScreen}
         options={{
-          title: "Coach",
-          tabBarLabel: "Coach",
+          title: "AI Chat",
+          tabBarLabel: "Chat",
           headerShown: false,
         }}
       />
       <Tab.Screen
-        name="Insights"
-        component={InsightsScreen}
+        name="Profile"
+        component={ProfileScreen}
         options={{
-          title: "Wellness Insights",
-          tabBarLabel: "Insights",
+          title: "Profile",
+          tabBarLabel: "Profile",
+          headerShown: false,
         }}
       />
     </Tab.Navigator>
+  );
+}
+
+// ==========================
+// STUDENT STACK (Nests Tabs + Details Screens)
+// ==========================
+const StudentStackNavigator = createNativeStackNavigator();
+
+function StudentStackScreen() {
+  return (
+    <StudentStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+      <StudentStackNavigator.Screen 
+        name="StudentTabs" 
+        component={StudentTabs} 
+      />
+      <StudentStackNavigator.Screen 
+        name="GoalDetail" 
+        component={GoalDetailScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="GoalCreation" 
+        component={GoalCreationScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="CSVUpload" 
+        component={CSVUploadScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="SubscriptionNegotiator" 
+        component={SubscriptionNegotiatorScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="RoundupTracker" 
+        component={RoundupTrackerScreen} 
+      />
+      <StudentStackNavigator.Screen 
+        name="EmergencyWithdrawal" 
+        component={EmergencyWithdrawalScreen} 
+      />
+    </StudentStackNavigator.Navigator>
   );
 }
 
@@ -116,7 +174,7 @@ function EducatorTabs() {
 // ROOT NAVIGATOR
 // ==========================
 export const RootNavigator = () => {
-  const { userToken, userRole, isLoading } = useAuth();
+  const { userToken, userRole, isLoading, hasCompletedOnboarding } = useAuth();
 
   if (isLoading) {
     return (
@@ -133,10 +191,18 @@ export const RootNavigator = () => {
     );
   }
 
+  // Set the initial route dynamically so returning users who completed onboarding land directly on Login
+  const initialRoute = hasCompletedOnboarding ? "Login" : "Onboarding";
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
       {userToken === null ? (
         <>
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="SpendingSetup" component={SpendingSetupScreen} />
+          <Stack.Screen name="CSVUpload" component={CSVUploadScreen} />
+          <Stack.Screen name="Analysis" component={AnalysisScreen} />
+          <Stack.Screen name="GoalCreation" component={GoalCreationScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
@@ -148,7 +214,7 @@ export const RootNavigator = () => {
       ) : (
         <Stack.Screen
           name="StudentHome"
-          component={StudentTabs}
+          component={StudentStackScreen}
         />
       )}
     </Stack.Navigator>

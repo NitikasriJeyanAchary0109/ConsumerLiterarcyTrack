@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -10,9 +10,33 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { apiService } from "../../services/api";
 
 export const SubscriptionNegotiatorScreen = ({ navigation }: { navigation: any }) => {
   const [selectedOption, setSelectedOption] = useState<"pause" | "keep">("pause");
+  const [aiInsight, setAiInsight] = useState<string>("Analyzing your Netflix subscription against your active goals...");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchInsight = async () => {
+      try {
+        const res = await apiService.negotiatePurchase({
+          item_name: "Netflix Subscription",
+          item_price: 15.99,
+          category: "Entertainment"
+        });
+        if (res && res.response) {
+          setAiInsight(res.response);
+        }
+      } catch (err) {
+        console.error("Negotiation API error:", err);
+        setAiInsight("Struggling with your goal? Try pausing Netflix for a month. You'll reach your active goals much faster.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchInsight();
+  }, []);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -63,7 +87,7 @@ export const SubscriptionNegotiatorScreen = ({ navigation }: { navigation: any }
         {/* AI Insight Box */}
         <View className="bg-primary-fixed/30 p-4 rounded-xl mb-6 border border-primary-fixed">
           <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-sm text-on-primary-fixed leading-relaxed">
-            "Struggling with your goal? Try pausing <Text style={{ fontFamily: "WorkSans_500Medium" }} className="font-bold">Netflix</Text> for a month. You'll reach your Euro-Summer trip much faster."
+            "{aiInsight}"
           </Text>
         </View>
 

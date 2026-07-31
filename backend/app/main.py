@@ -2,10 +2,11 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Depends
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import engine, Base, get_db
@@ -27,9 +28,8 @@ from app.routers import (
 # ==========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if settings.ENVIRONMENT == "development":
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+    # Ensure database tables exist
+    Base.metadata.create_all(bind=engine)
 
     yield
 
@@ -75,11 +75,11 @@ app.add_middleware(
 # Health Check
 # ==========================
 @app.get("/api/health")
-async def healthcheck(db: AsyncSession = Depends(get_db)):
+async def healthcheck(db: Session = Depends(get_db)):
     db_status = "healthy"
 
     try:
-        await db.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1"))
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
 
@@ -106,6 +106,15 @@ app.include_router(negotiator.router, prefix="/api")
 app.include_router(forecast.router, prefix="/api")
 app.include_router(stress.router, prefix="/api")
 app.include_router(educator.router, prefix="/api")
+
+
+# ==========================
+# Static Frontend Serving
+# ==========================
+import os
+dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dist")
+if os.path.exists(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="frontend")
 
 
 # ==========================
