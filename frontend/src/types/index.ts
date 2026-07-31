@@ -96,6 +96,8 @@ export interface AIRecommendation {
   content: string;
 }
 
+export interface AIInsight extends ChatHistory {}
+
 export interface AuditLog {
   log_id: number;
   trans_id: number;

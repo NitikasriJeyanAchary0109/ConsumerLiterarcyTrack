@@ -13,6 +13,8 @@ import HomeScreen from "../screens/student/HomeScreen";
 import GoalsScreen from "../screens/student/GoalsScreen";
 import CoachScreen from "../screens/student/CoachScreen";
 import InsightsScreen from "../screens/student/InsightsScreen";
+import BankConnectScreen from "../screens/student/BankConnectScreen";
+import TransactionListScreen from "../screens/student/TransactionListScreen";
 
 // Educator Screens
 import OverviewScreen from "../screens/educator/OverviewScreen";
@@ -73,6 +75,43 @@ function StudentTabs() {
 }
 
 // ==========================================
+// STUDENT NAVIGATION STACK (Nests Tabs + Banking Screens)
+// ==========================================
+const StudentStackNavigator = createNativeStackNavigator();
+
+function StudentStackScreen() {
+  return (
+    <StudentStackNavigator.Navigator>
+      <StudentStackNavigator.Screen 
+        name="StudentTabs" 
+        component={StudentTabs} 
+        options={{ headerShown: false }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="BankConnect" 
+        component={BankConnectScreen} 
+        options={{ 
+          title: "Link Bank Statement",
+          headerStyle: { backgroundColor: "#1e293b" },
+          headerTintColor: "#f8fafc",
+          headerTitleStyle: { fontWeight: "bold" }
+        }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="TransactionList" 
+        component={TransactionListScreen} 
+        options={{ 
+          title: "Transactions",
+          headerStyle: { backgroundColor: "#1e293b" },
+          headerTintColor: "#f8fafc",
+          headerTitleStyle: { fontWeight: "bold" }
+        }} 
+      />
+    </StudentStackNavigator.Navigator>
+  );
+}
+
+// ==========================================
 // EDUCATOR NAVIGATION (Tabs)
 // ==========================================
 function EducatorTabs() {
@@ -124,7 +163,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="EducatorHome" component={EducatorTabs} />
       ) : (
         // Student Flow
-        <Stack.Screen name="StudentHome" component={StudentTabs} />
+        <Stack.Screen name="StudentHome" component={StudentStackScreen} />
       )}
     </Stack.Navigator>
   );

@@ -213,7 +213,12 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
 
       {/* Recent Purchases List */}
       <Card className="mb-10">
-        <Text className="text-slate-100 text-lg font-bold mb-3">Recent Transactions</Text>
+        <View className="flex-row justify-between items-center mb-3">
+          <Text className="text-slate-100 text-lg font-bold">Recent Transactions</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("TransactionList")}>
+            <Text className="text-indigo-400 text-xs font-bold px-2 py-1 bg-indigo-500/10 rounded-lg">View Ledger</Text>
+          </TouchableOpacity>
+        </View>
         {loading && transactions.length === 0 ? (
           <ActivityIndicator size="small" color="#4F46E5" />
         ) : transactions.length === 0 ? (
