@@ -23,8 +23,9 @@ async def chat_with_coach(
     """
     # Build context from database
     recent_transactions = db.query(Transaction).filter(
-        Transaction.user_id == current_user.user_id
-    ).order_by(Transaction.date.desc()).limit(5).all()
+        Transaction.user_id == current_user.user_id,
+        Transaction.is_deleted == False
+    ).order_by(Transaction.transaction_date.desc()).limit(5).all()
 
     active_goals = db.query(Goal).filter(
         Goal.user_id == current_user.user_id

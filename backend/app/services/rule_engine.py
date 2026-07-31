@@ -341,7 +341,7 @@ except ImportError:
     _SQLALCHEMY_AVAILABLE = False
 
 
-async def apply_roundup_if_eligible(
+def apply_roundup_if_eligible(
     db,
     transaction,
     goal,
@@ -397,6 +397,8 @@ async def apply_roundup_if_eligible(
 
     save_record = Savings(
         user_id=transaction.user_id,
+        goal_id=goal.goal_id,
+        triggered_by_transaction_id=transaction.id,
         amount=roundup_amount,
         source="roundup",
         date=_dt.datetime.utcnow(),

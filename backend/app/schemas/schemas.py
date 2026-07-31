@@ -166,16 +166,25 @@ class TransactionBase(BaseModel):
     category: str
     merchant: str
     type: str = "debit"  # credit/debit
-    date: Optional[datetime] = None
+    transaction_date: Optional[datetime] = None
     description: Optional[str] = None
 
 class TransactionCreate(TransactionBase):
     pass
 
+class TransactionUpdate(BaseModel):
+    merchant: Optional[str] = None
+    category: Optional[str] = None
+    amount: Optional[Decimal] = None
+
 class TransactionResponse(TransactionBase):
-    trans_id: int
+    id: int
     user_id: int
-    date: datetime
+    transaction_date: datetime
+    round_up_amount: Decimal
+    is_round_up_applied: bool
+    created_at: datetime
+    is_deleted: bool
 
     class Config:
         from_attributes = True
