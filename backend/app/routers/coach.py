@@ -23,6 +23,11 @@ TODO: Confirm with Member 1 that ChatHistory model has `question` and `response`
       Text columns and a `created_at` timestamp (used in chat.py already).
 """
 
-# Placeholder — router will be implemented in the next sprint.
-# from fastapi import APIRouter
-# router = APIRouter(prefix="/coach", tags=["AI Coach"])
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/coach", tags=["AI Coach"])
+
+
+@router.get("/health")
+def coach_health():
+    return {"status": "ok"}

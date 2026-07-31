@@ -22,6 +22,7 @@ from app.routers import (
     savings,
     budgets,
     calculations,
+    coach,
 )
 
 
@@ -111,6 +112,7 @@ app.include_router(educator.router, prefix="/api")
 app.include_router(savings.router, prefix="/api")
 app.include_router(budgets.router, prefix="/api")
 app.include_router(calculations.router, prefix="/api")
+app.include_router(coach.router, prefix="/api")
 
 
 # ==========================
