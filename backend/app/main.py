@@ -17,24 +17,13 @@ from app.routers import (
     chat,
     negotiator,
     forecast,
-    stress,
-    educator,
-    savings,
-    budgets,
-from app.routers import (
-    auth,
-    transactions,
-    goals,
-    roundups,
-    chat,
-    negotiator,
-    forecast,
-    stress,
+    wellness,
     educator,
     savings,
     budgets,
     calculations,
     coach,          # feat-aimodel: AI Coach router
+    notifications,
 )
 
 
@@ -119,12 +108,13 @@ app.include_router(roundups.router,     prefix="/api")
 app.include_router(chat.router,         prefix="/api")
 app.include_router(negotiator.router,   prefix="/api")
 app.include_router(forecast.router,     prefix="/api")
-app.include_router(stress.router,       prefix="/api")
+app.include_router(wellness.router,     prefix="/api")
 app.include_router(educator.router,     prefix="/api")
 app.include_router(savings.router,      prefix="/api")
 app.include_router(budgets.router,      prefix="/api")
 app.include_router(calculations.router, prefix="/api")
 app.include_router(coach.router,        prefix="/api")
+app.include_router(notifications.router, prefix="/api")
 
 # ==========================
 # Run Server

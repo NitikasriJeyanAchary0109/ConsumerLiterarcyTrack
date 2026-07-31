@@ -45,6 +45,7 @@ from app.models.models import (
     Goal,
     Savings,
     User,
+    AIRecommendation,
 )
 from app.services.ai_engine import AIEngineError, call_llama
 from app.services.rule_engine import (
@@ -107,37 +108,32 @@ def _compute_goal_impact(
 
     Returns a human-readable string like "delays 'Laptop' goal by ~12 days"
     or "no active goals set" — suitable for insertion directly into the prompt.
-
-    Rule Engine calls used:
-      savings_velocity()  — to get monthly savings rate from recent Savings rows
-      goal_forecast()     — to get current projected date
-      goal_forecast()     — again with (current_saved - price) to get new date
     """
     # Fetch primary goal (highest progress ratio — most emotionally salient)
     goals = (
         db.query(Goal)
-        .filter(Goal.user_id == user_id)
+        .filter(Goal.user_id == user_id, Goal.status == "active")
         .all()
     )
     if not goals:
         return "no active savings goals set"
 
     # Pick the goal with the highest absolute saved amount
-    primary_goal: Goal = max(goals, key=lambda g: g.saved)
+    primary_goal: Goal = max(goals, key=lambda g: g.current_amount)
 
     # Get last-30-days savings velocity
     recent_savings_rows = (
         db.query(Savings)
         .filter(Savings.user_id == user_id)
-        .order_by(Savings.date.desc())  # type: ignore[attr-defined]
+        .order_by(Savings.created_at.desc())
         .limit(60)
         .all()
     )
     past_amounts = [Decimal(str(s.amount)) for s in recent_savings_rows]
     velocity = savings_velocity(past_amounts, period_days=30)
 
-    target  = Decimal(str(primary_goal.target))
-    current = Decimal(str(primary_goal.saved))
+    target  = Decimal(str(primary_goal.target_amount))
+    current = Decimal(str(primary_goal.current_amount))
 
     # Current forecast
     current_date = goal_forecast(target, current, velocity)
@@ -148,7 +144,7 @@ def _compute_goal_impact(
     new_date = goal_forecast(target, hypothetical_saved, velocity)
 
     # Format impact
-    goal_name = primary_goal.goal_name
+    goal_name = primary_goal.title
 
     if current_date >= datetime.date(9999, 1, 1):
         # Already unreachable — spending doesn't make it worse in a meaningful way
@@ -182,33 +178,28 @@ def _compute_budget_status(
     db: Session,
 ) -> str:
     """
-    Look up the Budget row for this category in the user's latest FinancialHealth
-    report and compute status including this hypothetical purchase.
+    Look up the Budget row for this category for the user and compute status
+    including this hypothetical purchase.
 
-    Falls back to "safe" if no budget row exists for the category (no DB write).
+    Falls back to "safe" if no budget row exists for the category.
     """
-    latest_report: Optional[FinancialHealth] = (
-        db.query(FinancialHealth)
-        .filter(FinancialHealth.user_id == user_id)
-        .order_by(FinancialHealth.created_at.desc())  # type: ignore[attr-defined]
-        .first()
-    )
-    if not latest_report:
-        return "safe"   # no report = no budget configured = assume safe
-
     budget_row: Optional[Budget] = (
         db.query(Budget)
         .filter(
-            Budget.report_id == latest_report.report_id,
+            Budget.user_id   == user_id,
             Budget.category  == category,
+            Budget.is_deleted == False
         )
         .first()
     )
     if not budget_row:
         return "safe"   # category not budgeted
 
+    from app.routers.budgets import calculate_spent_amount
+
     # Simulate adding the purchase to current spend
-    projected_spent = Decimal(str(budget_row.spent)) + price
+    spent = calculate_spent_amount(db, user_id, category, budget_row.period, budget_row.start_date)
+    projected_spent = spent + price
     limit           = Decimal(str(budget_row.limit_amount))
 
     return compute_budget_status(limit, projected_spent)
@@ -242,7 +233,7 @@ async def evaluate_purchase(
     2. Rule Engine — compute goal_impact (days/months delayed).
     3. Prompt builder — assemble negotiator_prompt() with computed values.
     4. AI Engine — call_llama() for practical advice.
-    5. Persist to ChatHistory with "negotiator:" prefix.
+    5. Persist to AIRecommendation.
     6. Return { advice, budget_status, goal_impact }.
     """
     uid = current_user.user_id
@@ -301,31 +292,41 @@ async def evaluate_purchase(
         ) from exc
 
     # ── 5: Persist recommendation ─────────────────────────────────────────
-    # Persisted to ChatHistory until a dedicated NegotiatorLog table is confirmed.
-    # TODO: confirm with Member 1 — replace ChatHistory write with a standalone
-    #       NegotiatorLog (user_id, rec_type, input_json, response, created_at)
-    #       once the migration is ready. See module docstring for options.
-    input_context = json.dumps({
+    input_dict = {
         "price":         str(request.price),
         "category":      request.category,
         "description":   request.description,
         "budget_status": bstatus,
         "goal_impact":   gimpact,
-    }, ensure_ascii=False)
+    }
 
-    log_entry = ChatHistory(
-        user_id=current_user.user_id,
-        question=f"negotiator: {input_context}",
-        response=advice,
+    # Find matching budget if exists
+    budget_row = (
+        db.query(Budget)
+        .filter(
+            Budget.user_id == uid,
+            Budget.category == request.category,
+            Budget.is_deleted == False
+        )
+        .first()
+    )
+    bid = budget_row.id if budget_row else None
+
+    rec_entry = AIRecommendation(
+        budget_id=bid,
+        user_id=uid,
+        rec_type="negotiator",
+        content=advice,
+        input_context=input_dict,
         created_at=datetime.datetime.utcnow(),
     )
-    db.add(log_entry)
+    db.add(rec_entry)
     db.commit()
-    db.refresh(log_entry)
+    db.refresh(rec_entry)
 
     logger.info(
         "negotiator.evaluate | user_id=%d rec_id=%d — saved",
-        uid, log_entry.chat_id,
+        uid, rec_entry.rec_id,
     )
 
     # ── 6: Return structured response ────────────────────────────────────

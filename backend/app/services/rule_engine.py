@@ -417,14 +417,14 @@ def apply_roundup_if_eligible(
         }
 
     # --- Mutate ORM objects (side-effects owned by the caller's session) ---
-    goal.saved += roundup_amount
+    goal.current_amount += roundup_amount
 
     # Import model lazily to avoid circular-import at module load time
     from app.models.models import Savings  # type: ignore[import]
 
     save_record = Savings(
         user_id=transaction.user_id,
-        goal_id=goal.goal_id,
+        goal_id=goal.id,
         triggered_by_transaction_id=transaction.id,
         amount=roundup_amount,
         source="round_up",
@@ -436,9 +436,9 @@ def apply_roundup_if_eligible(
 
     return {
         "success": True,
-        "save_id": save_record.save_id,
+        "save_id": save_record.id,
         "roundup_amount": roundup_amount,
-        "new_goal_amount": goal.saved,
+        "new_goal_amount": goal.current_amount,
         # AI explanation deliberately excluded — caller must request it from ai_engine.py
     }
 

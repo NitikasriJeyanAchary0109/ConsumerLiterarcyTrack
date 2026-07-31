@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from decimal import Decimal
@@ -17,8 +18,8 @@ def _money(value: Decimal) -> str:
 
 @router.get("/net-savings-rate")
 def get_net_savings_rate(
-    start_date: datetime | None = Query(default=None),
-    end_date: datetime | None = Query(default=None),
+    start_date: Optional[datetime] = Query(default=None),
+    end_date: Optional[datetime] = Query(default=None),
     current_user: User = Depends(require_student),
     db: Session = Depends(get_db),
 ):

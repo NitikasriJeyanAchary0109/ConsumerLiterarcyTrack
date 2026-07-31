@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Query as FastAPIQuery
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List, Optional
 from decimal import Decimal
 from datetime import datetime
@@ -10,7 +11,8 @@ from app.schemas.schemas import TransactionResponse, TransactionCreate, Transact
 from app.middleware.auth_middleware import require_student
 from app.services.csv_parser import parse_transactions_csv
 from app.services.rule_engine import apply_roundup_if_eligible
-from app.services.ai_service import call_ai, build_explain_prompt
+from app.services.ai_engine import call_llama
+from app.utils.prompts import explain_roundup_prompt
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -21,6 +23,7 @@ def get_my_transactions(
     category: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    search: Optional[str] = FastAPIQuery(None, description="Search text in description or merchant"),
     current_user: User = Depends(require_student),
     db: Session = Depends(get_db)
 ):
@@ -38,6 +41,14 @@ def get_my_transactions(
         query = query.filter(Transaction.transaction_date >= start_date)
     if end_date:
         query = query.filter(Transaction.transaction_date <= end_date)
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                Transaction.description.ilike(search_filter),
+                Transaction.merchant.ilike(search_filter)
+            )
+        )
         
     return query.order_by(Transaction.transaction_date.desc()).offset(offset).limit(limit).all()
 
@@ -111,13 +122,16 @@ async def create_transaction(
             db.refresh(db_transaction)
             
             # Generate AI explanation
-            prompt = build_explain_prompt(
+            prompt = explain_roundup_prompt(
                 transaction_desc=db_transaction.description or db_transaction.merchant,
-                transaction_amount=float(db_transaction.amount),
-                roundup_amount=float(db_transaction.round_up_amount)
+                transaction_amount=db_transaction.amount,
+                roundup_amount=db_transaction.round_up_amount
             )
             try:
-                explanation = await call_ai(prompt)
+                explanation = await call_llama(
+                    system_prompt="You are SpareChange AI, explaining transaction roundups in one sentence.",
+                    user_prompt=prompt
+                )
             except Exception:
                 explanation = "Automated micro-savings help build long-term savings habits without feeling the pinch."
             
@@ -231,19 +245,19 @@ def delete_transaction(
     if tx.is_round_up_applied:
         savings_record = db.query(Savings).filter(
             Savings.triggered_by_transaction_id == tx.id,
-            Savings.source == "roundup"
+            Savings.source == "round_up"
         ).first()
         
         if savings_record:
             if savings_record.goal_id:
                 goal = db.query(Goal).filter(
-                    Goal.goal_id == savings_record.goal_id,
+                    Goal.id == savings_record.goal_id,
                     Goal.user_id == current_user.user_id
                 ).first()
                 if goal:
-                    goal.saved -= savings_record.amount
-                    if goal.saved < 0:
-                        goal.saved = Decimal("0.00")
+                    goal.current_amount -= savings_record.amount
+                    if goal.current_amount < 0:
+                        goal.current_amount = Decimal("0.00")
             db.delete(savings_record)
         
         tx.is_round_up_applied = False
@@ -280,12 +294,16 @@ async def upload_bank_statement(
 
     try:
         content = await file.read()
-        parsed_txs = parse_transactions_csv(content)
+        parse_res = parse_transactions_csv(content)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"CSV parsing error: {str(e)}"
         )
+
+    parsed_txs = parse_res["imported"]
+    failed_count = parse_res["failed"]
+    errors = parse_res["errors"]
 
     inserted_count = 0
     roundup_count = 0
@@ -348,5 +366,7 @@ async def upload_bank_statement(
         "success": True,
         "message": f"Successfully imported {inserted_count} transactions.",
         "roundups_triggered": roundup_count,
-        "total_roundup_saved": total_roundup
+        "total_roundup_saved": total_roundup,
+        "failed_count": failed_count,
+        "errors": errors
     }

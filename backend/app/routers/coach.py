@@ -91,18 +91,16 @@ def _load_context(user_id: int, db: Session) -> tuple[list, list, list]:
 
     Returns:
         (recent_transactions, goals, budgets) — each a list of dicts.
-
-    Budget note
-    -----------
-    The Budget model is linked to FinancialHealth reports (not directly to
-    users). We pull budgets from the user's most-recent FinancialHealth
-    report as a best-effort context. If no report exists yet, budgets=[].
     """
     # --- Recent transactions (debit only — spending context) ---
     tx_rows = (
         db.query(Transaction)
-        .filter(Transaction.user_id == user_id, Transaction.type == "debit")
-        .order_by(Transaction.date.desc())
+        .filter(
+            Transaction.user_id == user_id,
+            Transaction.type == "debit",
+            Transaction.is_deleted == False,
+        )
+        .order_by(Transaction.transaction_date.desc())
         .limit(_MAX_RECENT_TX)
         .all()
     )
@@ -118,48 +116,41 @@ def _load_context(user_id: int, db: Session) -> tuple[list, list, list]:
     # --- Active goals ---
     goal_rows = (
         db.query(Goal)
-        .filter(Goal.user_id == user_id)
+        .filter(Goal.user_id == user_id, Goal.status == "active")
         .limit(_MAX_GOALS)
         .all()
     )
     goals = [
         {
-            "name":   g.goal_name,
-            "target": float(g.target),
-            "saved":  float(g.saved),
+            "name":   g.title,
+            "target": float(g.target_amount),
+            "saved":  float(g.current_amount),
         }
         for g in goal_rows
     ]
 
-    # --- Budgets from most-recent FinancialHealth report ---
-    latest_report: Optional[FinancialHealth] = (
-        db.query(FinancialHealth)
-        .filter(FinancialHealth.user_id == user_id)
-        .order_by(FinancialHealth.created_at.desc())
-        .first()
+    # --- Budgets directly by user_id ---
+    budget_rows = (
+        db.query(Budget)
+        .filter(Budget.user_id == user_id, Budget.is_deleted == False)
+        .limit(_MAX_BUDGETS)
+        .all()
     )
     budgets: list = []
-    if latest_report:
-        budget_rows = (
-            db.query(Budget)
-            .filter(Budget.report_id == latest_report.report_id)
-            .limit(_MAX_BUDGETS)
-            .all()
-        )
-        from app.services.rule_engine import budget_status as _budget_status
-        from decimal import Decimal
-        budgets = [
-            {
-                "category": b.category,
-                "budget":   float(b.limit_amount),
-                "spent":    float(b.spent),
-                "status":   _budget_status(
-                    Decimal(str(b.limit_amount)),
-                    Decimal(str(b.spent)),
-                ),
-            }
-            for b in budget_rows
-        ]
+    from app.services.rule_engine import budget_status as _budget_status
+    from app.routers.budgets import calculate_spent_amount
+    from decimal import Decimal
+    for b in budget_rows:
+        spent = calculate_spent_amount(db, user_id, b.category, b.period, b.start_date)
+        budgets.append({
+            "category": b.category,
+            "budget":   float(b.limit_amount),
+            "spent":    float(spent),
+            "status":   _budget_status(
+                Decimal(str(b.limit_amount)),
+                Decimal(str(spent)),
+            ),
+        })
 
     return recent_transactions, goals, budgets
 

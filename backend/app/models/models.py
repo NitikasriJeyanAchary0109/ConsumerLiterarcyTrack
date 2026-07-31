@@ -567,7 +567,7 @@ class AIRecommendation(Base):
     budget_id = Column(
         Integer,
         ForeignKey("budgets.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
 
     user_id = Column(
@@ -605,7 +605,7 @@ class AuditLog(Base):
     trans_id = Column(
         Integer,
         ForeignKey("transactions.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
 
     user_id = Column(
