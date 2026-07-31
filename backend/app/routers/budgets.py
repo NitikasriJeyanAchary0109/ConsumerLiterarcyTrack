@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.models.models import Budget, Transaction, User
+from app.models.models import Budget, Transaction, User, AuditLog
 from app.schemas.schemas import BudgetCreate, BudgetResponse, BudgetUpdate
 from app.middleware.auth_middleware import require_student
 
@@ -109,6 +109,19 @@ def create_budget(
     db.add(db_budget)
     db.commit()
     db.refresh(db_budget)
+
+    # Write AuditLog
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        action="create",
+        entity_type="budget",
+        entity_id=db_budget.id,
+        performed_by=f"user_{current_user.user_id}",
+        timestamp=datetime.utcnow()
+    )
+    db.add(audit)
+    db.commit()
+
     return _serialize_budget(db_budget, db)
 
 
@@ -211,6 +224,19 @@ def update_budget(
 
     db.commit()
     db.refresh(budget)
+
+    # Write AuditLog
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        action="update",
+        entity_type="budget",
+        entity_id=budget.id,
+        performed_by=f"user_{current_user.user_id}",
+        timestamp=datetime.utcnow()
+    )
+    db.add(audit)
+    db.commit()
+
     return _serialize_budget(budget, db)
 
 
@@ -230,4 +256,17 @@ def delete_budget(
 
     budget.is_deleted = True
     db.commit()
+
+    # Write AuditLog
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        action="delete",
+        entity_type="budget",
+        entity_id=budget.id,
+        performed_by=f"user_{current_user.user_id}",
+        timestamp=datetime.utcnow()
+    )
+    db.add(audit)
+    db.commit()
+
     return None
