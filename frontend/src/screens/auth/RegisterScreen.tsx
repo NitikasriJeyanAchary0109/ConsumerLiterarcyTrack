@@ -36,82 +36,103 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-900">
+    <SafeAreaView className="flex-1 bg-[#f8fafc]">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}>
           <View className="mb-6 items-center">
-            <Text className="text-3xl font-black text-indigo-400">SpareChange AI</Text>
-            <Text className="text-slate-400 text-sm mt-2">Create your investment account</Text>
+            <Text style={{ fontFamily: "PlusJakartaSans_800ExtraBold" }} className="text-3xl text-[#005bbf]">
+              SpareChange AI
+            </Text>
+            <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-500 text-sm mt-2">
+              Create your investment account
+            </Text>
           </View>
 
-          <View className="bg-slate-800 border border-slate-700/50 p-6 rounded-3xl shadow-xl">
-            <Text className="text-slate-100 text-xl font-bold mb-4 text-center">Register</Text>
+          <View className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm">
+            <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-slate-800 text-xl font-bold mb-4 text-center">
+              Register
+            </Text>
 
             {errorMsg && (
-              <View className="bg-red-500/10 border border-red-500/30 p-3.5 rounded-xl mb-4">
-                <Text className="text-red-400 text-xs font-semibold text-center">{errorMsg}</Text>
+              <View className="bg-red-50 border border-red-100 p-3.5 rounded-xl mb-4">
+                <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-red-600 text-xs font-semibold text-center">
+                  {errorMsg}
+                </Text>
               </View>
             )}
 
             {successMsg && (
-              <View className="bg-emerald-500/10 border border-emerald-500/30 p-3.5 rounded-xl mb-4">
-                <Text className="text-emerald-400 text-xs font-semibold text-center">{successMsg}</Text>
+              <View className="bg-green-50 border border-green-100 p-3.5 rounded-xl mb-4">
+                <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-green-600 text-xs font-semibold text-center">
+                  {successMsg}
+                </Text>
               </View>
             )}
 
             <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Full Name</Text>
+              <Text style={{ fontFamily: "WorkSans_600SemiBold" }} className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                Full Name
+              </Text>
               <TextInput
                 value={name}
                 onChangeText={setName}
                 placeholder="Alex Morgan"
-                placeholderTextColor="#64748B"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 text-slate-100 text-sm focus:border-indigo-500"
+                placeholderTextColor="#94a3b8"
+                style={{ fontFamily: "WorkSans_400Regular" }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 text-sm focus:border-[#005bbf] focus:bg-white"
               />
             </View>
 
             <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Email Address</Text>
+              <Text style={{ fontFamily: "WorkSans_600SemiBold" }} className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                Email Address
+              </Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 placeholder="alex@college.edu"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94a3b8"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 text-slate-100 text-sm focus:border-indigo-500"
+                style={{ fontFamily: "WorkSans_400Regular" }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 text-sm focus:border-[#005bbf] focus:bg-white"
               />
             </View>
 
             <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Password</Text>
+              <Text style={{ fontFamily: "WorkSans_600SemiBold" }} className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                Password
+              </Text>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Minimum 6 characters"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94a3b8"
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 text-slate-100 text-sm focus:border-indigo-500"
+                style={{ fontFamily: "WorkSans_400Regular" }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 text-sm focus:border-[#005bbf] focus:bg-white"
               />
             </View>
 
             {/* Role selection */}
             <View className="mb-6">
-              <Text className="text-slate-300 text-xs font-semibold uppercase tracking-wider mb-3">Choose Account Type</Text>
+              <Text style={{ fontFamily: "WorkSans_600SemiBold" }} className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">
+                Choose Account Type
+              </Text>
               <View className="flex-row gap-x-4">
                 <TouchableOpacity
                   onPress={() => setRole("student")}
                   className={`flex-1 py-3 px-4 rounded-xl border flex-row justify-center ${
-                    role === "student" ? "bg-indigo-600/20 border-indigo-500" : "bg-slate-900 border-slate-700"
+                    role === "student" ? "bg-blue-50 border-[#005bbf]" : "bg-slate-50 border-slate-200"
                   }`}
                 >
-                  <Text className={`font-bold text-xs ${role === "student" ? "text-indigo-400" : "text-slate-400"}`}>
+                  <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className={`text-xs ${role === "student" ? "text-[#005bbf]" : "text-slate-500"}`}>
                     Student
                   </Text>
                 </TouchableOpacity>
@@ -119,22 +140,34 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                 <TouchableOpacity
                   onPress={() => setRole("educator")}
                   className={`flex-1 py-3 px-4 rounded-xl border flex-row justify-center ${
-                    role === "educator" ? "bg-indigo-600/20 border-indigo-500" : "bg-slate-900 border-slate-700"
+                    role === "educator" ? "bg-blue-50 border-[#005bbf]" : "bg-slate-50 border-slate-200"
                   }`}
                 >
-                  <Text className={`font-bold text-xs ${role === "educator" ? "text-indigo-400" : "text-slate-400"}`}>
+                  <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className={`text-xs ${role === "educator" ? "text-[#005bbf]" : "text-slate-500"}`}>
                     Educator
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            <Button title="Register" onPress={handleRegister} loading={loading} variant="primary" />
+            <TouchableOpacity
+              onPress={handleRegister}
+              disabled={loading}
+              className="py-3.5 rounded-xl bg-[#005bbf] active:bg-[#004493] flex-row justify-center items-center"
+            >
+              <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-white font-bold text-sm">
+                {loading ? "Registering..." : "Register"}
+              </Text>
+            </TouchableOpacity>
 
             <View className="flex-row justify-center items-center mt-5">
-              <Text className="text-slate-400 text-xs">Already have an account? </Text>
+              <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-400 text-xs">
+                Already have an account?{" "}
+              </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text className="text-indigo-400 text-xs font-bold">Login</Text>
+                <Text style={{ fontFamily: "WorkSans_600SemiBold" }} className="text-[#005bbf] text-xs font-bold">
+                  Login
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

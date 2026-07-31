@@ -85,6 +85,11 @@ export const GoalsScreen = () => {
   ];
 
   const displayedGoals = goals.length > 0 ? goals : mockGoals;
+  const sortedGoals = [...displayedGoals].sort((a, b) => {
+    const dateA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+    const dateB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    return dateA - dateB;
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f9ff]">
@@ -165,7 +170,7 @@ export const GoalsScreen = () => {
           {loading && goals.length === 0 ? (
             <ActivityIndicator size="large" color="#005bbf" className="py-8" />
           ) : (
-            displayedGoals.map((g: any) => {
+            sortedGoals.map((g: any) => {
               const targetAmount = Number(g.target) || 1;
               const savedAmount = Number(g.saved) || 0;
               const percent = Math.min(Math.round((savedAmount / targetAmount) * 100), 100);
@@ -173,9 +178,16 @@ export const GoalsScreen = () => {
               const isPriority = g.isPriority || false;
 
               return (
-                <View 
+                <Pressable 
                   key={g.goal_id}
-                  style={styles.card} 
+                  onPress={() => {
+                    triggerHaptic();
+                    navigation.navigate("GoalDetail", { goal: g });
+                  }}
+                  style={({ pressed }) => [
+                    styles.card,
+                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                  ]}
                   className="bg-white rounded-2xl p-4 border border-outline-variant/30 relative overflow-hidden"
                 >
                   {isPriority && (
@@ -225,7 +237,7 @@ export const GoalsScreen = () => {
                       </Text>
                     </View>
                   </View>
-                </View>
+                </Pressable>
               );
             })
           )}

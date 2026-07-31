@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { View, Text, Image, Pressable, SafeAreaView, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Image, Pressable, SafeAreaView, StyleSheet, Modal } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Animated, { 
   useSharedValue, 
@@ -9,8 +9,12 @@ import Animated, {
   withDelay, 
   Easing 
 } from "react-native-reanimated";
+import { useAuth } from "../../hooks/useAuth";
 
 export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
+  const { loginAsGuest } = useAuth();
+  const [showChoiceModal, setShowChoiceModal] = useState(false);
+
   // Float animations for central illustration and badges
   const floatMain = useSharedValue(0);
   const floatBadge1 = useSharedValue(0);
@@ -22,7 +26,6 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
       -1,
       true
     );
-    // Staggered float animations to mimic the css delay offsets
     floatBadge1.value = withDelay(
       1000,
       withRepeat(
@@ -53,6 +56,14 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
     transform: [{ translateY: floatBadge2.value }]
   }));
 
+  const handleSkip = async () => {
+    try {
+      await loginAsGuest();
+    } catch (err) {
+      console.warn("Guest login failed:", err);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
@@ -66,7 +77,6 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
       <View className="flex-1 items-center justify-center px-5 max-w-md mx-auto w-full">
         {/* Illustration Canvas */}
         <View className="relative w-64 h-64 mb-8 flex items-center justify-center">
-          {/* Subtle background blob */}
           <View className="absolute w-56 h-56 bg-surface-container-low rounded-full opacity-40 scale-110 blur-xl" />
 
           {/* Central Illustration */}
@@ -105,7 +115,7 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
 
         {/* Actions */}
         <View className="w-full space-y-4 px-4">
-          {/* Primary Action Button */}
+          {/* Option A: Set a Goal First */}
           <Pressable 
             android_ripple={{ color: "rgba(255,255,255,0.2)" }}
             style={({ pressed }) => [
@@ -119,14 +129,14 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
             </Text>
           </Pressable>
 
-          {/* Secondary Action Button */}
+          {/* Option B: Tell Us About Your Spending */}
           <Pressable 
             android_ripple={{ color: "rgba(0,91,191,0.1)" }}
             style={({ pressed }) => [
               styles.secondaryBtn,
               { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
             ]}
-            onPress={() => navigation.navigate("SpendingSetup")}
+            onPress={() => setShowChoiceModal(true)}
           >
             <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-ob-primary text-base">
               Tell Us About Your Spending
@@ -135,10 +145,10 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
         </View>
       </View>
 
-      {/* Footer */}
+      {/* Option C: Skip for now */}
       <View className="py-6 items-center">
         <Pressable 
-          onPress={() => navigation.navigate("Login")}
+          onPress={handleSkip}
           style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
           className="py-2 px-4"
         >
@@ -147,6 +157,85 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
           </Text>
         </Pressable>
       </View>
+
+      {/* Choice Modal (Manual Entry vs CSV Upload) */}
+      <Modal visible={showChoiceModal} transparent animationType="slide">
+        <View style={styles.modalOverlay} className="flex-1 justify-end">
+          <View className="bg-white rounded-t-3xl pt-2 pb-10 px-margin-mobile shadow-2xl">
+            {/* Drag Handle */}
+            <View className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
+
+            <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-slate-800 text-lg font-bold mb-2 text-center">
+              How would you like to link spending?
+            </Text>
+            <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-500 text-xs text-center mb-6">
+              Pick the method that works best for you
+            </Text>
+
+            {/* Option 1: Manual entry */}
+            <Pressable
+              onPress={() => {
+                setShowChoiceModal(false);
+                navigation.navigate("SpendingSetup");
+              }}
+              style={({ pressed }) => [
+                styles.choiceCard,
+                { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
+              ]}
+              className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex-row items-center mb-4"
+            >
+              <View className="w-12 h-12 bg-blue-50 rounded-xl items-center justify-center mr-4">
+                <MaterialIcons name="edit" size={24} color="#005bbf" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-slate-800 text-sm font-bold">
+                  Manual Income Entry
+                </Text>
+                <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-500 text-[11px] mt-0.5">
+                  Type your income and select recurring monthly expenses
+                </Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#94a3b8" />
+            </Pressable>
+
+            {/* Option 2: CSV Upload */}
+            <Pressable
+              onPress={() => {
+                setShowChoiceModal(false);
+                navigation.navigate("CSVUpload");
+              }}
+              style={({ pressed }) => [
+                styles.choiceCard,
+                { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
+              ]}
+              className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex-row items-center mb-6"
+            >
+              <View className="w-12 h-12 bg-emerald-50 rounded-xl items-center justify-center mr-4">
+                <MaterialIcons name="cloud-upload" size={24} color="#006d2a" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-slate-800 text-sm font-bold">
+                  CSV Statement Upload
+                </Text>
+                <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-500 text-[11px] mt-0.5">
+                  Upload transaction logs to detect income and bills automatically
+                </Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#94a3b8" />
+            </Pressable>
+
+            {/* Cancel Button */}
+            <Pressable
+              onPress={() => setShowChoiceModal(false)}
+              className="py-3.5 border border-slate-200 bg-white rounded-xl items-center"
+            >
+              <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-slate-600 text-sm font-bold">
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -183,6 +272,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
+  },
+  modalOverlay: {
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  choiceCard: {
+    minHeight: 76,
   }
 });
 

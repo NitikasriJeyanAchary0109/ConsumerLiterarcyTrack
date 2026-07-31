@@ -227,7 +227,7 @@ export const AnalysisScreen = ({ navigation }: { navigation: any }) => {
             ]}
             onPress={() => {
               triggerHaptic();
-              navigation.navigate("Login");
+              navigation.navigate("GoalCreation");
             }}
           >
             <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-white text-base mr-1">

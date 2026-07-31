@@ -8,9 +8,7 @@ from app.config import settings
 # ==========================
 engine = create_engine(
     settings.DATABASE_URL,
-    echo=False,
-    future=True,
-    pool_pre_ping=True,
+    pool_pre_ping=True  # Automatically checks connection health
 )
 
 # ==========================
@@ -20,7 +18,6 @@ SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
     autocommit=False,
-    expire_on_commit=False,
 )
 
 # ==========================
@@ -33,6 +30,10 @@ Base = declarative_base()
 # Dependency
 # ==========================
 def get_db():
+    """
+    Database session dependency for FastAPI routes.
+    Yields a database session and ensures it is closed after request completion.
+    """
     db = SessionLocal()
     try:
         yield db

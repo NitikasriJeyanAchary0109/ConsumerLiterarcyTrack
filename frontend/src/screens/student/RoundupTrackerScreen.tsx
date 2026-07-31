@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -11,6 +11,7 @@ import {
 import { MaterialIcons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
+import { apiService } from "../../services/api";
 
 interface TransactionActivity {
   id: string;
@@ -78,10 +79,81 @@ const ACTIVITIES: TransactionActivity[] = [
 
 export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
   const [selectedFilter, setSelectedFilter] = useState("All Time");
+  const [totalSaved, setTotalSaved] = useState<number>(0);
+  const [txCount, setTxCount] = useState<number>(0);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [coachInsight, setCoachInsight] = useState<string>("Saving spare change is the easiest way to grow your budget. Keep it up!");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch stats
+        const stats = await apiService.getRoundupStats();
+        if (stats) {
+          setTotalSaved(Number(stats.total_saved) || 0);
+          setTxCount(Number(stats.roundup_transactions_count) || 0);
+        }
+
+        // Fetch transactions to calculate real roundups
+        const txs = await apiService.getTransactions();
+        if (txs && txs.length > 0) {
+          const debitTxs = txs.filter((t: any) => t.type === "debit" || t.amount > 0);
+          const formatted = debitTxs.map((t: any) => {
+            const amt = Number(t.amount);
+            const roundup = amt > 0 ? Number((Math.ceil(amt) - amt).toFixed(2)) : 0;
+            
+            // Format icon based on category
+            let icon = "shopping";
+            let bg = "#2874f0";
+            if (t.category?.toLowerCase().includes("food") || t.category?.toLowerCase().includes("dine")) {
+              icon = "food-delivery";
+              bg = "#fc8019";
+            } else if (t.category?.toLowerCase().includes("coffee") || t.category?.toLowerCase().includes("cafe")) {
+              icon = "coffee";
+              bg = "#006241";
+            } else if (t.category?.toLowerCase().includes("transport") || t.category?.toLowerCase().includes("uber")) {
+              icon = "taxi";
+              bg = "#000000";
+            }
+
+            const dateObj = new Date(t.date || Date.now());
+            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            return {
+              id: t.trans_id.toString(),
+              merchant: t.merchant || "Purchase",
+              time: timeStr,
+              category: t.category || "General",
+              amount: amt,
+              roundup: roundup,
+              icon: icon,
+              iconColor: "#ffffff",
+              iconBg: bg,
+              iconProvider: icon === "coffee" ? "fa" : "mci"
+            };
+          });
+          setActivities(formatted.slice(0, 10));
+        }
+
+        // Fetch custom AI Insight for this screen
+        const insight = await apiService.chatWithCoach("Give me a one-sentence encouraging micro-insight based on roundups savings.");
+        if (insight && insight.response) {
+          setCoachInsight(insight.response);
+        }
+      } catch (err) {
+        console.error("Roundup screen fetch error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f9ff]">
@@ -134,11 +206,11 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
             </Text>
             <View className="flex-row items-baseline space-x-2 mb-4">
               <Text style={{ fontFamily: "PlusJakartaSans_800ExtraBold" }} className="text-4xl text-white">
-                ₹1,245
+                ₹{totalSaved.toLocaleString("en-IN")}
               </Text>
               <View className="bg-tertiary px-2 py-0.5 rounded-full border border-emerald-400/20">
                 <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[10px] text-white font-bold">
-                  +12% this month
+                  Active
                 </Text>
               </View>
             </View>
@@ -147,18 +219,18 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
             <View className="flex-row space-x-3">
               <View className="flex-1 bg-white/10 rounded-xl p-3">
                 <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[10px] text-white/80 uppercase tracking-wider font-bold">
-                  Today
+                  Triggers
                 </Text>
                 <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-lg text-white">
-                  ₹42
+                  {txCount} times
                 </Text>
               </View>
               <View className="flex-1 bg-white/10 rounded-xl p-3">
                 <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[10px] text-white/80 uppercase tracking-wider font-bold">
-                  Goal Reach
+                  Weekly Average
                 </Text>
                 <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-lg text-white">
-                  62%
+                  ₹{(totalSaved > 0 ? (totalSaved / 4).toFixed(0) : "0")}
                 </Text>
               </View>
             </View>
@@ -214,49 +286,57 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
 
         {/* Transaction list */}
         <View className="space-y-3 mb-6">
-          {ACTIVITIES.map((act) => (
-            <Pressable
-              key={act.id}
-              onPress={triggerHaptic}
-              style={({ pressed }) => [
-                styles.itemCard,
-                { transform: [{ scale: pressed ? 0.98 : 1 }] }
-              ]}
-              className="flex-row items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/30"
-            >
-              <View className="flex-row items-center space-x-3">
-                <View 
-                  style={{ backgroundColor: act.iconBg }}
-                  className="w-12 h-12 rounded-full items-center justify-center border border-outline-variant/20"
-                >
-                  {act.iconProvider === "fa" ? (
-                    <FontAwesome name={act.icon as any} size={20} color={act.iconColor} />
-                  ) : (
-                    <MaterialCommunityIcons name={act.icon as any} size={20} color={act.iconColor} />
-                  )}
+          {activities.length === 0 ? (
+            <View className="bg-white rounded-2xl p-6 border border-outline-variant/30 items-center justify-center">
+              <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-xs text-on-surface-variant">
+                No recent debit transactions found. upload a statement to generate roundups!
+              </Text>
+            </View>
+          ) : (
+            activities.map((act) => (
+              <Pressable
+                key={act.id}
+                onPress={triggerHaptic}
+                style={({ pressed }) => [
+                  styles.itemCard,
+                  { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                ]}
+                className="flex-row items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/30"
+              >
+                <View className="flex-row items-center space-x-3">
+                  <View 
+                    style={{ backgroundColor: act.iconBg }}
+                    className="w-12 h-12 rounded-full items-center justify-center border border-outline-variant/20"
+                  >
+                    {act.iconProvider === "fa" ? (
+                      <FontAwesome name={act.icon as any} size={20} color={act.iconColor} />
+                    ) : (
+                      <MaterialCommunityIcons name={act.icon as any} size={20} color={act.iconColor} />
+                    )}
+                  </View>
+                  <View>
+                    <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
+                      {act.merchant}
+                    </Text>
+                    <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-[10px] text-on-secondary-container">
+                      {act.time} • {act.category}
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
-                    {act.merchant}
-                  </Text>
-                  <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-[10px] text-on-secondary-container">
-                    {act.time} • {act.category}
-                  </Text>
-                </View>
-              </View>
 
-              <View className="items-end space-y-1">
-                <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
-                  ₹{act.amount}
-                </Text>
-                <View className="bg-tertiary/10 px-2 py-0.5 rounded-full border border-tertiary/20">
-                  <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[9px] text-tertiary font-bold">
-                    +₹{act.roundup} round-up
+                <View className="items-end space-y-1">
+                  <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
+                    ₹{act.amount}
                   </Text>
+                  <View className="bg-tertiary/10 px-2 py-0.5 rounded-full border border-tertiary/20">
+                    <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[9px] text-tertiary font-bold">
+                      +₹{act.roundup} round-up
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ))
+          )}
         </View>
 
         {/* AI Insight Box */}
@@ -267,7 +347,7 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
               AI Coach Insight
             </Text>
             <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-xs text-on-surface-variant leading-5">
-              "You saved <Text style={{ fontFamily: "WorkSans_500Medium" }} className="font-bold">₹42</Text> more than last Tuesday! At this rate, you'll reach your 'iPhone Upgrade' goal 2 weeks earlier."
+              "{coachInsight}"
             </Text>
           </View>
         </View>

@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Depends
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
@@ -29,8 +30,8 @@ from app.routers import (
 # ==========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if settings.ENVIRONMENT == "development":
-        Base.metadata.create_all(bind=engine)
+    # Ensure database tables exist
+    Base.metadata.create_all(bind=engine)
 
     yield
 
@@ -76,7 +77,7 @@ app.add_middleware(
 # Health Check
 # ==========================
 @app.get("/api/health")
-def healthcheck(db: Session = Depends(get_db)):
+async def healthcheck(db: Session = Depends(get_db)):
     db_status = "healthy"
 
     try:
@@ -109,6 +110,15 @@ app.include_router(stress.router,       prefix="/api")
 app.include_router(educator.router,     prefix="/api")
 app.include_router(savings.router,      prefix="/api")   # from main
 app.include_router(coach.router,        prefix="/api")   # from feat-aimodel
+
+
+# ==========================
+# Static Frontend Serving
+# ==========================
+import os
+dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dist")
+if os.path.exists(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="frontend")
 
 
 # ==========================

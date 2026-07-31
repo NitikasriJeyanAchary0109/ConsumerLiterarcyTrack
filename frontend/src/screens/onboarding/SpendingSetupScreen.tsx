@@ -256,7 +256,7 @@ export const SpendingSetupScreen = ({ navigation }: { navigation: any }) => {
             ]}
             onPress={() => {
               triggerHaptic();
-              navigation.navigate("CSVUpload", { 
+              navigation.navigate("GoalCreation", { 
                 monthlyIncome: parseFloat(currentInput) || 0,
                 expensesTotal: totalExpenses
               });

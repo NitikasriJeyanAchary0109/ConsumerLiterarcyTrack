@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../config";
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL.endsWith("/") ? API_URL : `${API_URL}/`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -37,7 +37,6 @@ api.interceptors.response.use(
       try {
         await AsyncStorage.removeItem("userToken");
         await AsyncStorage.removeItem("userRole");
-        // In a production application, you would trigger a state change or redirect here
       } catch (e) {
         console.error("Storage clear failure in response interceptor", e);
       }
@@ -50,15 +49,15 @@ api.interceptors.response.use(
 export const apiService = {
   // Transactions
   getTransactions: async () => {
-    const response = await api.get("/transactions/");
+    const response = await api.get("transactions/");
     return response.data;
   },
   createTransaction: async (data: { amount: number; category: string; merchant: string; type: string; description?: string }) => {
-    const response = await api.post("/transactions/", data);
+    const response = await api.post("transactions/", data);
     return response.data;
   },
   uploadStatement: async (formData: FormData) => {
-    const response = await api.post("/transactions/upload", formData, {
+    const response = await api.post("transactions/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -68,53 +67,53 @@ export const apiService = {
 
   // Goals
   getGoals: async () => {
-    const response = await api.get("/goals/");
+    const response = await api.get("goals/");
     return response.data;
   },
   createGoal: async (data: { goal_name: string; target: number; deadline?: string }) => {
-    const response = await api.post("/goals/", data);
+    const response = await api.post("goals/", data);
     return response.data;
   },
   updateGoal: async (goalId: number, data: any) => {
-    const response = await api.put(`/goals/${goalId}`, data);
+    const response = await api.put(`goals/${goalId}`, data);
     return response.data;
   },
   deleteGoal: async (goalId: number) => {
-    const response = await api.delete(`/goals/${goalId}`);
+    const response = await api.delete(`goals/${goalId}`);
     return response.data;
   },
 
   // Roundups
   getRoundups: async () => {
-    const response = await api.get("/roundups/");
+    const response = await api.get("roundups/");
     return response.data;
   },
   getRoundupStats: async () => {
-    const response = await api.get("/roundups/stats");
+    const response = await api.get("roundups/stats");
     return response.data;
   },
 
   // AI Modules
   chatWithCoach: async (message: string) => {
-    const response = await api.post("/chat/", { message });
+    const response = await api.post("chat/", { message });
     return response.data;
   },
   negotiatePurchase: async (data: { item_name: string; item_price: number; category: string }) => {
-    const response = await api.post("/negotiator/", data);
+    const response = await api.post("negotiator/", data);
     return response.data;
   },
   forecastSavings: async (data: { goal_id: number; monthly_contribution: number }) => {
-    const response = await api.post("/forecast/", data);
+    const response = await api.post("forecast/", data);
     return response.data;
   },
   getStressMeter: async (timeframe_days: number = 30) => {
-    const response = await api.post("/stress/", { timeframe_days });
+    const response = await api.post("stress/", { timeframe_days });
     return response.data;
   },
 
   // Educator
   getEducatorAnalytics: async () => {
-    const response = await api.get("/educator/analytics");
+    const response = await api.get("educator/analytics");
     return response.data;
   },
 };

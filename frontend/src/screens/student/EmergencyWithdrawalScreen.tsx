@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -14,13 +14,21 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { apiService } from "../../services/api";
 
-export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) => {
+export const EmergencyWithdrawalScreen = ({ route, navigation }: { route: any; navigation: any }) => {
+  const goalNameParam = route?.params?.goalName;
+  const savedAmountParam = route?.params?.savedAmount;
+
   const [amount, setAmount] = useState("1000");
   const [reason, setReason] = useState("");
   const [showPicker, setShowPicker] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+
+  const [goalName, setGoalName] = useState<string>(goalNameParam || "Active Goal");
+  const [balance, setBalance] = useState<number>(savedAmountParam !== undefined ? Number(savedAmountParam) : 12500);
+  const [coachTip, setCoachTip] = useState<string>("Try to keep withdrawals minimal to protect your long-term savings momentum.");
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -33,22 +41,69 @@ export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) =
     { value: "travel", label: "Urgent Travel" },
   ];
 
-  const handleConfirm = () => {
+  // Fetch Goals & active balance on mount if not passed as params
+  useEffect(() => {
+    if (goalNameParam !== undefined && savedAmountParam !== undefined) return;
+    const fetchGoalDetails = async () => {
+      try {
+        const goals = await apiService.getGoals();
+        if (goals && goals.length > 0) {
+          setGoalName(goals[0].goal_name);
+          setBalance(Number(goals[0].saved) || 0);
+        }
+      } catch (err) {
+        console.error("Goals fetch in emergency screen error:", err);
+      }
+    };
+    fetchGoalDetails();
+  }, [goalNameParam, savedAmountParam]);
+
+  // Fetch dynamic AI Coach recommendation based on amount & reason
+  useEffect(() => {
+    if (!amount || !reason) return;
+    const fetchRecommendation = async () => {
+      try {
+        const res = await apiService.chatWithCoach(
+          `Give me a 1-sentence quick tip or gentle warning for an emergency withdrawal of ₹${amount} for ${reason}.`
+        );
+        if (res && res.response) {
+          setCoachTip(res.response);
+        }
+      } catch (err) {
+        console.error("AI Coach suggestion in emergency screen error:", err);
+      }
+    };
+    const delayDebounce = setTimeout(() => {
+      fetchRecommendation();
+    }, 1000);
+
+    return () => clearTimeout(delayDebounce);
+  }, [amount, reason]);
+
+  const handleConfirm = async () => {
     if (!reason) {
       Alert.alert("Reason Required", "Please select a reason for this withdrawal.");
       return;
     }
     const val = parseFloat(amount) || 0;
-    if (val <= 0 || val > 12500) {
-      Alert.alert("Invalid Amount", "Please enter an amount between ₹1 and ₹12,500.");
+    if (val <= 0 || val > balance) {
+      Alert.alert("Invalid Amount", `Please enter an amount between ₹1 and ₹${balance.toLocaleString("en-IN")}.`);
       return;
     }
 
     triggerHaptic();
     setIsProcessing(true);
 
-    // Simulate transfer transaction
-    setTimeout(() => {
+    try {
+      // Post transaction to the database
+      await apiService.createTransaction({
+        amount: -val,
+        category: "Emergency Withdrawal",
+        merchant: `Withdrawal: ${reason}`,
+        type: "debit",
+        description: `Emergency transfer: ${reason}`
+      });
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setIsProcessing(false);
       setIsCompleted(true);
@@ -58,7 +113,11 @@ export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) =
         `Successfully transferred ₹${val.toLocaleString("en-IN")} to your primary account instantly.`,
         [{ text: "Done", onPress: () => navigation.goBack() }]
       );
-    }, 1800);
+    } catch (err) {
+      console.error("Emergency withdrawal confirm error:", err);
+      setIsProcessing(false);
+      Alert.alert("Transfer Failed", "We could not complete your withdrawal at this moment. Please try again.");
+    }
   };
 
   const selectedReasonLabel = REASONS.find(r => r.value === reason)?.label || "Select a reason...";
@@ -117,7 +176,7 @@ export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) =
         <View style={styles.warningCard} className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex-row space-x-3 mb-6 items-center">
           <MaterialIcons name="warning" size={24} color="#d97706" />
           <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-xs text-amber-900 flex-1 leading-5">
-            <Text style={{ fontFamily: "WorkSans_500Medium" }} className="font-bold">Attention:</Text> This withdrawal will delay your 'New Laptop' goal by <Text style={{ fontFamily: "WorkSans_500Medium" }} className="font-bold">6 days</Text>.
+            <Text style={{ fontFamily: "WorkSans_500Medium" }} className="font-bold">Attention:</Text> This withdrawal will delay your <Text style={{ fontFamily: "WorkSans_500Medium" }} className="font-bold">'{goalName}'</Text> target goal.
           </Text>
         </View>
 
@@ -137,7 +196,7 @@ export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) =
           </View>
           <View className="mt-2 bg-slate-100 px-3.5 py-1.5 rounded-full border border-slate-200/50">
             <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-xs text-on-surface-variant">
-              Balance: ₹12,500
+              Available Balance: ₹{balance.toLocaleString("en-IN")}
             </Text>
           </View>
         </View>
@@ -171,7 +230,7 @@ export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) =
               Coach's Tip
             </Text>
             <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-xs text-on-surface-variant leading-relaxed">
-              Try to keep this below ₹2,000 to keep your "Financial Resilience" badge active this month.
+              {coachTip}
             </Text>
           </View>
         </View>
