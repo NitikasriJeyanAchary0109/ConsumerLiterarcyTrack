@@ -6,8 +6,7 @@ from alembic import context
 # Import settings and Base metadata
 from app.config import settings
 from app.database import Base
-# Import all ORM models to ensure they are registered on the Base metadata
-from app.models.models import User, Transaction, Goal, RoundUpHistory, AIInsight
+from app.models.models import User, UserSession, SecurityEvent, Goal, Savings, Notification, ChatHistory, FinancialHealth, Transaction, Budget, AIRecommendation, AuditLog
 
 config = context.config
 

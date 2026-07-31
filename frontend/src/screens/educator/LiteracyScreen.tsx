@@ -33,7 +33,8 @@ export const LiteracyScreen = () => {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-900 px-4 pt-4"
+      className="flex-1 bg-slate-900"
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
       }

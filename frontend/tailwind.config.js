@@ -7,13 +7,82 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#4F46E5",     // Indigo
-        secondary: "#10B981",   // Emerald (Savings green)
-        background: "#0F172A",  // Slate 900 (Sleek dark theme default)
-        card: "#1E293B",        // Slate 800
-        text: "#F8FAFC",        // Slate 50
-        textMuted: "#94A3B8"    // Slate 400
-      }
+        // ── Existing dark-theme tokens (unchanged) ──
+        primary: "#4F46E5",
+        secondary: "#10B981",
+        background: "#0F172A",
+        card: "#1E293B",
+        text: "#F8FAFC",
+        textMuted: "#94A3B8",
+
+        // ── MD3 Onboarding tokens (conflicting keys prefixed ob-) ──
+        "ob-primary": "#005bbf",
+        "ob-secondary": "#5c5f60",
+        "ob-background": "#f7f9ff",
+        "ob-error": "#ba1a1a",
+
+        // ── MD3 Onboarding tokens (non-conflicting) ──
+        "primary-fixed": "#d8e2ff",
+        "primary-fixed-dim": "#adc7ff",
+        "primary-container": "#1a73e8",
+        "on-primary": "#ffffff",
+        "on-primary-container": "#ffffff",
+        "on-primary-fixed": "#001a41",
+        "on-primary-fixed-variant": "#004493",
+        "surface-tint": "#005bc0",
+        "surface": "#f7f9ff",
+        "surface-bright": "#f7f9ff",
+        "surface-dim": "#d7dae0",
+        "surface-variant": "#dfe3e8",
+        "surface-container": "#ebeef4",
+        "surface-container-low": "#f1f4fa",
+        "surface-container-high": "#e5e8ee",
+        "surface-container-highest": "#dfe3e8",
+        "surface-container-lowest": "#ffffff",
+        "on-surface": "#181c20",
+        "on-surface-variant": "#414754",
+        "on-background": "#181c20",
+        "inverse-primary": "#adc7ff",
+        "inverse-surface": "#2d3135",
+        "inverse-on-surface": "#eef1f7",
+        "tertiary": "#006d2a",
+        "tertiary-container": "#16893a",
+        "tertiary-fixed": "#8ffa9b",
+        "tertiary-fixed-dim": "#73dc82",
+        "on-tertiary": "#ffffff",
+        "on-tertiary-container": "#000701",
+        "on-tertiary-fixed": "#002108",
+        "on-tertiary-fixed-variant": "#00531e",
+        "secondary-container": "#dee0e1",
+        "secondary-fixed": "#e1e3e4",
+        "secondary-fixed-dim": "#c4c7c8",
+        "on-secondary": "#ffffff",
+        "on-secondary-container": "#606364",
+        "on-secondary-fixed": "#191c1d",
+        "on-secondary-fixed-variant": "#444748",
+        "outline": "#727785",
+        "outline-variant": "#c1c6d6",
+        "error-container": "#ffdad6",
+        "on-error": "#ffffff",
+        "on-error-container": "#93000a",
+      },
+      spacing: {
+        "stack-sm": "8px",
+        "stack-md": "16px",
+        "stack-lg": "24px",
+        "stack-xl": "32px",
+        "margin-mobile": "20px",
+        "gutter": "16px",
+      },
+      fontFamily: {
+        "jakarta": ["PlusJakartaSans_400Regular"],
+        "jakarta-medium": ["PlusJakartaSans_500Medium"],
+        "jakarta-semibold": ["PlusJakartaSans_600SemiBold"],
+        "jakarta-bold": ["PlusJakartaSans_700Bold"],
+        "jakarta-extrabold": ["PlusJakartaSans_800ExtraBold"],
+        "worksans": ["WorkSans_400Regular"],
+        "worksans-medium": ["WorkSans_500Medium"],
+      },
     },
   },
   plugins: [],

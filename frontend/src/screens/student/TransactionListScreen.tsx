@@ -87,7 +87,7 @@ export const TransactionListScreen = ({ navigation }: { navigation: any }) => {
           <Text className="text-slate-400 text-xs font-semibold">Verify auto-saving swipes</Text>
         </View>
         <TouchableOpacity
-          onPress={() => navigation.navigate("BankConnect")}
+          onPress={() => navigation.navigate("CSVUpload")}
           className="bg-indigo-600 active:bg-indigo-700 py-2 px-3.5 rounded-xl flex-row items-center"
         >
           <Text className="text-white text-xs font-extrabold">Link Statement</Text>
@@ -146,7 +146,7 @@ export const TransactionListScreen = ({ navigation }: { navigation: any }) => {
                 You haven't linked a UPI statement or uploaded bank history yet. Select an option to start tracking.
               </Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate("BankConnect")}
+                onPress={() => navigation.navigate("CSVUpload")}
                 className="bg-indigo-600 active:bg-indigo-700 py-3.5 px-6 rounded-xl w-full flex-row justify-center"
               >
                 <Text className="text-white font-extrabold text-sm">Connect Your Bank</Text>

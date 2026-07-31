@@ -41,7 +41,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 justify-center">
+        <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}>
           <View className="mb-6 items-center">
             <Text className="text-3xl font-black text-indigo-400">SpareChange AI</Text>
             <Text className="text-slate-400 text-sm mt-2">Create your investment account</Text>
