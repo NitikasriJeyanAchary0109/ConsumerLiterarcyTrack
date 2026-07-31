@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 
 # ==========================================
 # AUTH SCHEMAS
@@ -67,28 +67,36 @@ class SecurityEventResponse(BaseModel):
 # GOAL SCHEMAS
 # ==========================================
 class GoalBase(BaseModel):
-    goal_name: str
-    target: Decimal
-    saved: Decimal = Decimal("0.00")
-    deadline: Optional[datetime] = None
+    title: str
+    target_amount: Decimal
+    current_amount: Decimal = Decimal("0.00")
+    target_date: Optional[datetime] = None
 
 class GoalCreate(BaseModel):
-    goal_name: str
-    target: Decimal
-    deadline: Optional[datetime] = None
+    title: str
+    target_amount: Decimal
+    target_date: Optional[datetime] = None
 
 class GoalUpdate(BaseModel):
-    goal_name: Optional[str] = None
-    target: Optional[Decimal] = None
-    saved: Optional[Decimal] = None
-    deadline: Optional[datetime] = None
+    title: Optional[str] = None
+    target_amount: Optional[Decimal] = None
+    current_amount: Optional[Decimal] = None
+    target_date: Optional[datetime] = None
 
 class GoalResponse(GoalBase):
-    goal_id: int
+    id: int
     user_id: int
+    status: str
+    created_at: datetime
+    is_deleted: bool
 
     class Config:
         from_attributes = True
+
+class GoalDetailResponse(GoalResponse):
+    progress_percentage: float
+    projected_completion_date: Optional[date] = None
+
 
 
 # ==========================================
