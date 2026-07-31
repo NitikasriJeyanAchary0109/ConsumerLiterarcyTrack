@@ -56,10 +56,18 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="w-full py-4 items-center justify-center border-b border-slate-100">
-        <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-xl text-ob-primary">
+      <View className="w-full py-4 px-5 flex-row items-center justify-between border-b border-slate-100">
+        <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-xl text-[#005bbf]">
           SpareChange AI
         </Text>
+        <Pressable 
+          onPress={() => navigation.navigate("Login")}
+          className="py-1 px-3 bg-blue-50 border border-blue-100 rounded-full"
+        >
+          <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-xs text-[#005bbf] font-bold">
+            Log In
+          </Text>
+        </Pressable>
       </View>
 
       {/* Main Content */}
@@ -126,7 +134,7 @@ export const OnboardingScreen = ({ navigation }: { navigation: any }) => {
               styles.secondaryBtn,
               { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
             ]}
-            onPress={() => navigation.navigate("SpendingSetup")}
+            onPress={() => navigation.navigate("SpendingChoice")}
           >
             <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className="text-ob-primary text-base">
               Tell Us About Your Spending

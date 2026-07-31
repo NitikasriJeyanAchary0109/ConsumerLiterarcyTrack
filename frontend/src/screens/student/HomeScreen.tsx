@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TextInput, Alert, ActivityIndicator, TouchableOpacity, RefreshControl } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
+import { useIsFocused } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
@@ -21,6 +22,12 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Coffee");
   const [logLoading, setLogLoading] = useState(false);
+
+  // States for negotiator modal
+  const isFocused = useIsFocused();
+  const [showNegotiator, setShowNegotiator] = useState(false);
+  const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
+  const [suggestInfo, setSuggestInfo] = useState<{ name: string; amount: number; daysWithout: number; daysWith: number; text: string } | null>(null);
 
   // States for roundup result modal / alert
   const [roundupAlert, setRoundupAlert] = useState<{ amount: number; desc: string } | null>(null);
@@ -50,6 +57,33 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Contextual check for pausable subscription on screen focus
+  useEffect(() => {
+    if (isFocused && !hasCheckedSubscription) {
+      const checkNegotiator = async () => {
+        try {
+          const subs = await apiService.getNegotiatorSubscriptions();
+          const pausable = Array.isArray(subs) ? subs.find((s: any) => s.pausable) : null;
+          if (pausable) {
+            const suggestData = await apiService.getNegotiatorSuggest({ subscription_name: pausable.name });
+            setSuggestInfo({
+              name: pausable.name,
+              amount: pausable.amount,
+              daysWithout: suggestData.days_without_pausing || 30,
+              daysWith: suggestData.days_with_pausing || 18,
+              text: suggestData.suggestion_text || `Struggling with your Laptop goal? Try pausing ${pausable.name} for a month.`
+            });
+            setShowNegotiator(true);
+            setHasCheckedSubscription(true);
+          }
+        } catch (e) {
+          console.warn("Negotiator focus check failed:", e);
+        }
+      };
+      checkNegotiator();
+    }
+  }, [isFocused]);
 
   const handleLogTransaction = async () => {
     if (!desc || !amount) {

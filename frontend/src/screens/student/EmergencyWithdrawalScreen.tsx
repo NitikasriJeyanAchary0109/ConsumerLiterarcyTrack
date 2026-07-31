@@ -14,8 +14,12 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { apiService } from "../../services/api";
 
-export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) => {
+export const EmergencyWithdrawalScreen = ({ route, navigation }: { route: any; navigation: any }) => {
+  const goalName = route?.params?.goalName || "Laptop Goal";
+  const balance = route?.params?.savedAmount || 12500;
+
   const [amount, setAmount] = useState("1000");
   const [reason, setReason] = useState("");
   const [showPicker, setShowPicker] = useState(false);
@@ -33,32 +37,36 @@ export const EmergencyWithdrawalScreen = ({ navigation }: { navigation: any }) =
     { value: "travel", label: "Urgent Travel" },
   ];
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!reason) {
       Alert.alert("Reason Required", "Please select a reason for this withdrawal.");
       return;
     }
     const val = parseFloat(amount) || 0;
-    if (val <= 0 || val > 12500) {
-      Alert.alert("Invalid Amount", "Please enter an amount between ₹1 and ₹12,500.");
+    if (val <= 0 || val > balance) {
+      Alert.alert("Invalid Amount", `Please enter an amount between ₹1 and ₹${balance.toLocaleString("en-IN")}.`);
       return;
     }
 
     triggerHaptic();
     setIsProcessing(true);
 
-    // Simulate transfer transaction
-    setTimeout(() => {
+    try {
+      const goalId = route?.params?.goalId || 1;
+      await apiService.withdrawGoal(goalId, { amount: val, reason });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setIsProcessing(false);
       setIsCompleted(true);
       
       Alert.alert(
-        "Transfer Complete",
-        `Successfully transferred ₹${val.toLocaleString("en-IN")} to your primary account instantly.`,
+        "Withdrawal Confirmed",
+        `Successfully transferred ₹${val.toLocaleString("en-IN")} from "${goalName}" to your primary account.`,
         [{ text: "Done", onPress: () => navigation.goBack() }]
       );
-    }, 1800);
+    } catch (e: any) {
+      Alert.alert("Withdrawal Error", e.message || "Failed to process emergency withdrawal.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const selectedReasonLabel = REASONS.find(r => r.value === reason)?.label || "Select a reason...";
