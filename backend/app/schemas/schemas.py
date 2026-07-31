@@ -1,0 +1,256 @@
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List
+from decimal import Decimal
+from datetime import datetime
+
+# ==========================================
+# AUTH SCHEMAS
+# ==========================================
+class UserBase(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    role: str = Field(default="student", description="Role: student or educator")
+
+class UserCreate(UserBase):
+    password: Optional[str] = None  # Optional for Google OAuth users
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(UserBase):
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+    role: Optional[str] = None
+    user_id: Optional[int] = None
+
+
+# ==========================================
+# USER SESSION & SECURITY SCHEMAS
+# ==========================================
+class UserSessionResponse(BaseModel):
+    session_id: int
+    user_id: int
+    ip_address: Optional[str]
+    device: Optional[str]
+    login_at: datetime
+    logout_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+class SecurityEventResponse(BaseModel):
+    event_id: int
+    session_id: int
+    event_type: str
+    severity: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# GOAL SCHEMAS
+# ==========================================
+class GoalBase(BaseModel):
+    goal_name: str
+    target: Decimal
+    saved: Decimal = Decimal("0.00")
+    deadline: Optional[datetime] = None
+
+class GoalCreate(BaseModel):
+    goal_name: str
+    target: Decimal
+    deadline: Optional[datetime] = None
+
+class GoalUpdate(BaseModel):
+    goal_name: Optional[str] = None
+    target: Optional[Decimal] = None
+    saved: Optional[Decimal] = None
+    deadline: Optional[datetime] = None
+
+class GoalResponse(GoalBase):
+    goal_id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# SAVINGS SCHEMAS
+# ==========================================
+class SavingsBase(BaseModel):
+    amount: Decimal
+    source: str
+    date: Optional[datetime] = None
+
+class SavingsCreate(SavingsBase):
+    pass
+
+class SavingsResponse(SavingsBase):
+    save_id: int
+    user_id: int
+    date: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# NOTIFICATION SCHEMAS
+# ==========================================
+class NotificationResponse(BaseModel):
+    notif_id: int
+    user_id: int
+    title: str
+    message: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# CHAT HISTORY SCHEMAS
+# ==========================================
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatHistoryResponse(BaseModel):
+    chat_id: int
+    user_id: int
+    question: str
+    response: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# FINANCIAL HEALTH SCHEMAS
+# ==========================================
+class FinancialHealthResponse(BaseModel):
+    report_id: int
+    user_id: int
+    health_score: int
+    stress_score: int
+    ai_summary: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# TRANSACTION SCHEMAS
+# ==========================================
+class TransactionBase(BaseModel):
+    amount: Decimal
+    category: str
+    merchant: str
+    type: str = "debit"  # credit/debit
+    date: Optional[datetime] = None
+    description: Optional[str] = None
+
+class TransactionCreate(TransactionBase):
+    pass
+
+class TransactionResponse(TransactionBase):
+    trans_id: int
+    user_id: int
+    date: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# BUDGET SCHEMAS
+# ==========================================
+class BudgetBase(BaseModel):
+    category: str
+    limit_amount: Decimal
+    spent: Decimal = Decimal("0.00")
+    period: str = "monthly"
+
+class BudgetCreate(BaseModel):
+    trans_id: int
+    report_id: int
+    category: str
+    limit_amount: Decimal
+    period: str = "monthly"
+
+class BudgetResponse(BudgetBase):
+    budget_id: int
+    trans_id: int
+    report_id: int
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# AI RECOMMENDATION SCHEMAS
+# ==========================================
+class AIRecommendationResponse(BaseModel):
+    rec_id: int
+    budget_id: int
+    rec_type: str
+    content: str
+
+    class Config:
+        from_attributes = True
+
+class NegotiateRequest(BaseModel):
+    item_name: str
+    item_price: Decimal
+    category: str
+
+class ForecastRequest(BaseModel):
+    goal_id: int
+    monthly_contribution: Decimal
+
+class StressRequest(BaseModel):
+    timeframe_days: int = 30
+
+
+# ==========================================
+# AUDIT LOG SCHEMAS
+# ==========================================
+class AuditLogResponse(BaseModel):
+    log_id: int
+    trans_id: int
+    action: str
+    performed_by: str
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# EDUCATOR/ANALYTICS SCHEMAS
+# ==========================================
+class EducatorAnalyticsResponse(BaseModel):
+    total_students: int
+    total_savings: Decimal
+    average_savings_per_student: Decimal
+    total_transactions_processed: int
+    recent_insights: List[ChatHistoryResponse]

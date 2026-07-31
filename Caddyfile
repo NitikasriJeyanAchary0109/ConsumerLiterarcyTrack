@@ -1,0 +1,19 @@
+# Deployed Domain Configuration (DuckDNS Placeholder)
+yourapp.duckdns.org {
+    # Reverse proxy api requests to the backend container over internal Docker network port 8000
+    reverse_proxy backend:8000
+
+    # Optional header configurations for security
+    header {
+        # Enforce HTTPS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent clickjacking
+        X-Frame-Options "DENY"
+        # Protect against XSS
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Enable compression
+    encode gzip
+}
