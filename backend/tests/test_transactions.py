@@ -124,7 +124,7 @@ def test_create_transaction_with_roundup():
     savings = db.query(Savings).filter(Savings.triggered_by_transaction_id == tx["id"]).first()
     assert savings is not None
     assert savings.amount == Decimal("0.40")
-    assert savings.source == "roundup"
+    assert savings.source == "round_up"
     assert savings.goal_id == 1
     
     # Verify AuditLog logged
@@ -349,7 +349,7 @@ def test_delete_transaction_soft_delete_and_reverse_roundup():
         goal_id=1,
         triggered_by_transaction_id=tx_id,
         amount=Decimal("7.50"),
-        source="roundup",
+        source="round_up",
         date=datetime.datetime.utcnow()
     )
     db.add(savings)
