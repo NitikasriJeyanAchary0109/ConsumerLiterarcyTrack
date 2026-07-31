@@ -18,18 +18,18 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   className = "",
 }) => {
-  let buttonStyle = "py-3.5 px-6 rounded-xl flex-row justify-center items-center my-2 ";
+  let buttonStyle = "py-3.5 px-6 rounded-full flex-row justify-center items-center my-2 ";
   let textStyle = "font-bold text-base ";
 
   if (variant === "primary") {
-    buttonStyle += disabled ? "bg-indigo-400" : "bg-indigo-600 active:bg-indigo-700";
+    buttonStyle += disabled ? "bg-blue-300" : "bg-[#005bbf] active:bg-[#004493]";
     textStyle += "text-white";
   } else if (variant === "secondary") {
-    buttonStyle += disabled ? "bg-emerald-400" : "bg-emerald-600 active:bg-emerald-700";
+    buttonStyle += disabled ? "bg-emerald-300" : "bg-[#16893a] active:bg-[#116a2d]";
     textStyle += "text-white";
   } else if (variant === "outline") {
-    buttonStyle += "border border-indigo-600 bg-transparent active:bg-indigo-50/10";
-    textStyle += "text-indigo-400";
+    buttonStyle += "border border-[#005bbf] bg-transparent active:bg-blue-50";
+    textStyle += "text-[#005bbf]";
   }
 
   return (
@@ -40,9 +40,9 @@ export const Button: React.FC<ButtonProps> = ({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === "outline" ? "#4F46E5" : "#FFF"} size="small" />
+        <ActivityIndicator color={variant === "outline" ? "#005bbf" : "#FFF"} size="small" />
       ) : (
-        <Text className={textStyle}>{title}</Text>
+        <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold" }} className={textStyle}>{title}</Text>
       )}
     </TouchableOpacity>
   );

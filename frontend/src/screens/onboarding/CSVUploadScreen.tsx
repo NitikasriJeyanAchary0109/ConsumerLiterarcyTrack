@@ -21,6 +21,7 @@ import Animated, {
   Easing,
   runOnJS
 } from "react-native-reanimated";
+import { apiService } from "../../services/api";
 
 export const CSVUploadScreen = ({ navigation }: { navigation: any }) => {
   const [loading, setLoading] = useState(false);
@@ -85,13 +86,26 @@ export const CSVUploadScreen = ({ navigation }: { navigation: any }) => {
     triggerHaptic();
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["text/comma-separated-values", "text/csv"],
+        type: ["text/comma-separated-values", "text/csv", "*/*"],
         copyToCacheDirectory: true
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        // Start simulated parsing and AI categorizing animation
         setLoading(true);
+        const fileAsset = result.assets[0];
+        try {
+          const formData = new FormData();
+          formData.append("file", {
+            uri: fileAsset.uri,
+            name: fileAsset.name || "transactions.csv",
+            type: fileAsset.mimeType || "text/csv",
+          } as any);
+
+          await apiService.uploadStatement(formData);
+          await apiService.getDetectedPatterns();
+        } catch (apiErr) {
+          console.warn("Upload/Detection API call issue:", apiErr);
+        }
       }
     } catch (err) {
       console.warn("Document picking failed", err);
