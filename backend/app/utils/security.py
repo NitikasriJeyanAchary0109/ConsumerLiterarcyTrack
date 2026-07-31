@@ -1,42 +1,156 @@
-from jose import jwt, JWTError
-from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
+from uuid import uuid4
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
 from app.config import settings
 
-# Setup password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# =====================================
+# Password Hashing
+# =====================================
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifies that a plain text password matches a stored hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
 
 def get_password_hash(password: str) -> str:
-    """Generates a secure bcrypt hash for a plain text password."""
+    """Generate bcrypt hash."""
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Encodes access token parameters (payload dict) into a JWT.
-    Contains metadata like subject, role, user_id, and expiration time.
-    """
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    return encoded_jwt
 
-def decode_access_token(token: str) -> Optional[dict]:
+def verify_password(
+    plain_password: str,
+    hashed_password: str
+) -> bool:
+    """Verify bcrypt hash."""
+    return pwd_context.verify(
+        plain_password,
+        hashed_password
+    )
+
+
+# =====================================
+# Access Token
+# =====================================
+
+def create_access_token(
+    data: dict,
+    expires_delta: Optional[timedelta] = None,
+):
+    payload = data.copy()
+
+    expire = (
+        datetime.utcnow() + expires_delta
+        if expires_delta
+        else datetime.utcnow()
+        + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    )
+
+    payload.update(
+        {
+            "exp": expire,
+            "jti": str(uuid4()),
+            "type": "access",
+        }
+    )
+
+    return jwt.encode(
+        payload,
+        settings.JWT_SECRET,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+
+# =====================================
+# Refresh Token
+# =====================================
+
+def create_refresh_token(data: dict):
+    payload = data.copy()
+
+    expire = datetime.utcnow() + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    )
+
+    payload.update(
+        {
+            "exp": expire,
+            "jti": str(uuid4()),
+            "type": "refresh",
+        }
+    )
+
+    return jwt.encode(
+        payload,
+        settings.JWT_SECRET,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+
+# =====================================
+# Decode JWT
+# =====================================
+
+def decode_token(token: str):
     """
-    Decodes and validates a JWT access token.
-    Returns the payload dictionary if successful, or None if expired/invalid.
+    Decode any valid JWT token.
+    Returns payload if valid, otherwise None.
     """
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        return payload
+        return jwt.decode(
+            token,
+            settings.JWT_SECRET,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
     except JWTError:
         return None
+
+
+def decode_access_token(token: str):
+    """
+    Decode and validate an access token.
+    Returns payload if valid access token, otherwise None.
+    """
+    payload = decode_token(token)
+
+    if payload is None:
+        return None
+
+    if payload.get("type") != "access":
+        return None
+
+    return payload
+
+
+def decode_refresh_token(token: str):
+    """
+    Decode and validate a refresh token.
+    Returns payload if valid refresh token, otherwise None.
+    """
+    payload = decode_token(token)
+
+    if payload is None:
+        return None
+
+    if payload.get("type") != "refresh":
+        return None
+
+    return payload
+
+
+# =====================================
+# Token Validation
+# =====================================
+
+def is_access_token(payload: dict):
+    return payload.get("type") == "access"
+
+
+def is_refresh_token(payload: dict):
+    return payload.get("type") == "refresh"
