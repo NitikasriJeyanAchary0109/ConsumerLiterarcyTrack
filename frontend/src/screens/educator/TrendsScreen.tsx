@@ -12,7 +12,7 @@ export const TrendsScreen = () => {
   const categoryData = [450, 310, 180, 240];
 
   return (
-    <ScrollView className="flex-1 bg-slate-900 px-4 pt-4 pb-10">
+    <ScrollView className="flex-1 bg-slate-900" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 }}>
       <View className="mb-6">
         <Text className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Visual Analytics</Text>
         <Text className="text-slate-100 text-2xl font-black">Cohort Trends</Text>

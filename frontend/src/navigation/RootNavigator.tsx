@@ -8,13 +8,23 @@ import { useAuth } from "../hooks/useAuth";
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
+// Onboarding Screens
+import OnboardingScreen from "../screens/onboarding/OnboardingScreen";
+import SpendingSetupScreen from "../screens/onboarding/SpendingSetupScreen";
+import CSVUploadScreen from "../screens/onboarding/CSVUploadScreen";
+import GoalCreationScreen from "../screens/onboarding/GoalCreationScreen";
+import AnalysisScreen from "../screens/onboarding/AnalysisScreen";
+
 // Student Screens
 import HomeScreen from "../screens/student/HomeScreen";
 import GoalsScreen from "../screens/student/GoalsScreen";
 import CoachScreen from "../screens/student/CoachScreen";
 import InsightsScreen from "../screens/student/InsightsScreen";
-import BankConnectScreen from "../screens/student/BankConnectScreen";
 import TransactionListScreen from "../screens/student/TransactionListScreen";
+import SubscriptionNegotiatorScreen from "../screens/student/SubscriptionNegotiatorScreen";
+import RoundupTrackerScreen from "../screens/student/RoundupTrackerScreen";
+import EmergencyWithdrawalScreen from "../screens/student/EmergencyWithdrawalScreen";
+import InvestmentAdvisorScreen from "../screens/student/InvestmentAdvisorScreen";
 
 // Educator Screens
 import OverviewScreen from "../screens/educator/OverviewScreen";
@@ -88,14 +98,14 @@ function StudentStackScreen() {
         options={{ headerShown: false }} 
       />
       <StudentStackNavigator.Screen 
-        name="BankConnect" 
-        component={BankConnectScreen} 
-        options={{ 
-          title: "Link Bank Statement",
-          headerStyle: { backgroundColor: "#1e293b" },
-          headerTintColor: "#f8fafc",
-          headerTitleStyle: { fontWeight: "bold" }
-        }} 
+        name="GoalCreation" 
+        component={GoalCreationScreen} 
+        options={{ headerShown: false }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="CSVUpload" 
+        component={CSVUploadScreen} 
+        options={{ headerShown: false }} 
       />
       <StudentStackNavigator.Screen 
         name="TransactionList" 
@@ -106,6 +116,26 @@ function StudentStackScreen() {
           headerTintColor: "#f8fafc",
           headerTitleStyle: { fontWeight: "bold" }
         }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="SubscriptionNegotiator" 
+        component={SubscriptionNegotiatorScreen} 
+        options={{ headerShown: false }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="RoundupTracker" 
+        component={RoundupTrackerScreen} 
+        options={{ headerShown: false }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="EmergencyWithdrawal" 
+        component={EmergencyWithdrawalScreen} 
+        options={{ headerShown: false }} 
+      />
+      <StudentStackNavigator.Screen 
+        name="InvestmentAdvisor" 
+        component={InvestmentAdvisorScreen} 
+        options={{ headerShown: false }} 
       />
     </StudentStackNavigator.Navigator>
   );
@@ -151,10 +181,15 @@ export const RootNavigator = () => {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Onboarding">
       {userToken === null ? (
         // Unauthenticated Flows
         <>
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="SpendingSetup" component={SpendingSetupScreen} />
+          <Stack.Screen name="CSVUpload" component={CSVUploadScreen} />
+          <Stack.Screen name="Analysis" component={AnalysisScreen} />
+          <Stack.Screen name="GoalCreation" component={GoalCreationScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
