@@ -23,10 +23,10 @@ from app.routers import (
     budgets,
     calculations,
     coach,          # feat-aimodel: AI Coach router
-feat-aimodel
     dream,
     notifications,
-  main
+    dream,          # feat-aimodel: Dream Engine (goal forecast)
+    wellness,       # feat-aimodel: Financial Wellness (stress score)
 )
 # ==========================
 # Startup / Shutdown
@@ -118,6 +118,11 @@ app.include_router(calculations.router, prefix="/api")
 app.include_router(coach.router,        prefix="/api")
 app.include_router(dream.router,        prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(savings.router,      prefix="/api")   # from main
+app.include_router(coach.router,        prefix="/api")   # from feat-aimodel
+app.include_router(dream.router,        prefix="/api")   # from feat-aimodel
+app.include_router(wellness.router,     prefix="/api")   # from feat-aimodel
+
 
 # ==========================
 # Run Server
