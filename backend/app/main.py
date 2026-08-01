@@ -21,6 +21,7 @@ from app.routers import (
     educator,
     savings,
     coach,          # feat-aimodel: AI Coach router
+    dream,          # feat-aimodel: Dream Engine (goal forecast)
 )
 
 
@@ -109,6 +110,7 @@ app.include_router(stress.router,       prefix="/api")
 app.include_router(educator.router,     prefix="/api")
 app.include_router(savings.router,      prefix="/api")   # from main
 app.include_router(coach.router,        prefix="/api")   # from feat-aimodel
+app.include_router(dream.router,        prefix="/api")   # from feat-aimodel
 
 
 # ==========================
