@@ -18,10 +18,32 @@ import { apiService } from "../../services/api";
 export const InsightsScreen = ({ navigation }: { navigation: any }) => {
   const [loading, setLoading] = useState(false);
   const [stressSummary, setStressSummary] = useState<string | null>(null);
+  const [healthScore, setHealthScore] = useState<number>(85);
+  const [stressScore, setStressScore] = useState<number>(20);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  const loadWellnessData = async () => {
+    try {
+      setLoading(true);
+      const res = await apiService.getStressMeter(30);
+      if (res) {
+        setHealthScore(res.health_score !== undefined ? Number(res.health_score) : 85);
+        setStressScore(res.stress_score !== undefined ? Number(res.stress_score) : 20);
+        setStressSummary(res.ai_summary);
+      }
+    } catch (e) {
+      console.warn("Failed to load stress/wellness meter:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWellnessData();
+  }, []);
 
   const handleRunStressMeter = async () => {
     triggerHaptic();
@@ -29,6 +51,8 @@ export const InsightsScreen = ({ navigation }: { navigation: any }) => {
     setStressSummary(null);
     try {
       const response = await apiService.getStressMeter(30);
+      setHealthScore(response.health_score !== undefined ? Number(response.health_score) : 85);
+      setStressScore(response.stress_score !== undefined ? Number(response.stress_score) : 20);
       setStressSummary(response.ai_summary);
       Alert.alert(
         "Stress Analysis Complete",
@@ -40,6 +64,9 @@ export const InsightsScreen = ({ navigation }: { navigation: any }) => {
       setLoading(false);
     }
   };
+
+  const healthOffset = 94 * (1 - healthScore / 100);
+  const stressOffset = 94 * (1 - stressScore / 100);
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f9ff]">
@@ -91,15 +118,15 @@ export const InsightsScreen = ({ navigation }: { navigation: any }) => {
               <Svg width="120" height="120" viewBox="0 0 100 100" style={{ transform: [{ rotate: "-180deg" }] }}>
                 {/* Background arc */}
                 <Path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#F1F3F4" strokeWidth="8" />
-                {/* Highlight fill (85% approx: strokeDashoffset calculation) */}
-                <Path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#1A73E8" strokeWidth="8" strokeLinecap="round" strokeDasharray="94 94" strokeDashoffset="14" />
+                {/* Highlight fill (healthScore approx: strokeDashoffset calculation) */}
+                <Path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#1A73E8" strokeWidth="8" strokeLinecap="round" strokeDasharray="94 94" strokeDashoffset={healthOffset} />
               </Svg>
               <View className="absolute bottom-1">
                 {loading ? (
                   <ActivityIndicator size="small" color="#1a73e8" />
                 ) : (
                   <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-lg text-primary">
-                    85
+                    {healthScore}
                   </Text>
                 )}
               </View>
@@ -108,7 +135,7 @@ export const InsightsScreen = ({ navigation }: { navigation: any }) => {
               Wellness Score
             </Text>
             <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-[10px] text-on-surface-variant text-center mt-2 leading-4">
-              Excellent! You're in the top 10% of campus savers.
+              {healthScore >= 80 ? "Excellent! You're in the top 10% of campus savers." : "Keep saving to build your wellness score!"}
             </Text>
           </Pressable>
 
@@ -127,11 +154,11 @@ export const InsightsScreen = ({ navigation }: { navigation: any }) => {
             <View style={styles.gaugeContainer} className="mb-2 items-center justify-center">
               <Svg width="120" height="120" viewBox="0 0 100 100" style={{ transform: [{ rotate: "-180deg" }] }}>
                 <Path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#F1F3F4" strokeWidth="8" />
-                <Path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#ba1a1a" strokeWidth="8" strokeLinecap="round" strokeDasharray="94 94" strokeDashoffset="75" />
+                <Path d="M 20 50 A 30 30 0 0 1 80 50" fill="none" stroke="#ba1a1a" strokeWidth="8" strokeLinecap="round" strokeDasharray="94 94" strokeDashoffset={stressOffset} />
               </Svg>
               <View className="absolute bottom-1">
                 <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-lg text-error">
-                  20
+                  {stressScore}
                 </Text>
               </View>
             </View>

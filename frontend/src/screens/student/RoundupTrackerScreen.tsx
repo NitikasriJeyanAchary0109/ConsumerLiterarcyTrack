@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -6,11 +6,13 @@ import {
   Pressable, 
   SafeAreaView, 
   StyleSheet, 
-  Image 
+  Image,
+  ActivityIndicator
 } from "react-native";
 import { MaterialIcons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
+import { apiService } from "../../services/api";
 
 interface TransactionActivity {
   id: string;
@@ -78,10 +80,86 @@ const ACTIVITIES: TransactionActivity[] = [
 
 export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
   const [selectedFilter, setSelectedFilter] = useState("All Time");
+  const [activities, setActivities] = useState<TransactionActivity[]>([]);
+  const [totalSaved, setTotalSaved] = useState(1245);
+  const [todaySaved, setTodaySaved] = useState(42);
+  const [loading, setLoading] = useState(false);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const txs = await apiService.getTransactions();
+      const roundups = txs.filter((t: any) => t.amount % 10 !== 0 || t.date);
+
+      let total = 0;
+      let today = 0;
+      const todayStr = new Date().toDateString();
+
+      const mapped: TransactionActivity[] = txs
+        .filter((t: any) => Number(t.round_up_amount) > 0)
+        .map((t: any) => {
+          const rUp = Number(t.round_up_amount) || 0;
+          total += rUp;
+          const txDate = new Date(t.date);
+          if (txDate.toDateString() === todayStr) {
+            today += rUp;
+          }
+
+          const formattedTime = txDate.toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          const cat = t.category.toLowerCase();
+          let icon = "shopping";
+          let iconBg = "#2874f0";
+          if (cat.includes("coffee") || cat.includes("cafe") || cat.includes("starbucks")) {
+            icon = "coffee";
+            iconBg = "#006241";
+          } else if (cat.includes("food") || cat.includes("swiggy") || cat.includes("restaurant")) {
+            icon = "food-delivery";
+            iconBg = "#fc8019";
+          } else if (cat.includes("transport") || cat.includes("uber") || cat.includes("ola")) {
+            icon = "taxi";
+            iconBg = "#000000";
+          }
+
+          return {
+            id: t.trans_id.toString(),
+            merchant: t.merchant,
+            time: formattedTime,
+            category: t.category,
+            amount: t.amount,
+            roundup: rUp,
+            icon: icon,
+            iconColor: "#ffffff",
+            iconBg: iconBg,
+            iconProvider: icon === "coffee" ? "fa" : "mci"
+          };
+        });
+
+      if (mapped.length > 0) {
+        setActivities(mapped);
+        setTotalSaved(total);
+        setTodaySaved(today);
+      } else {
+        setActivities(ACTIVITIES);
+      }
+    } catch (e) {
+      console.warn("Failed to load roundups activity:", e);
+      setActivities(ACTIVITIES);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f9ff]">
@@ -134,11 +212,11 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
             </Text>
             <View className="flex-row items-baseline space-x-2 mb-4">
               <Text style={{ fontFamily: "PlusJakartaSans_800ExtraBold" }} className="text-4xl text-white">
-                ₹1,245
+                ₹{totalSaved.toLocaleString("en-IN")}
               </Text>
               <View className="bg-tertiary px-2 py-0.5 rounded-full border border-emerald-400/20">
                 <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[10px] text-white font-bold">
-                  +12% this month
+                  Active
                 </Text>
               </View>
             </View>
@@ -150,15 +228,15 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
                   Today
                 </Text>
                 <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-lg text-white">
-                  ₹42
+                  ₹{todaySaved.toLocaleString("en-IN")}
                 </Text>
               </View>
               <View className="flex-1 bg-white/10 rounded-xl p-3">
                 <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[10px] text-white/80 uppercase tracking-wider font-bold">
-                  Goal Reach
+                  Transactions
                 </Text>
                 <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-lg text-white">
-                  62%
+                  {activities.length}
                 </Text>
               </View>
             </View>
@@ -214,49 +292,53 @@ export const RoundupTrackerScreen = ({ navigation }: { navigation: any }) => {
 
         {/* Transaction list */}
         <View className="space-y-3 mb-6">
-          {ACTIVITIES.map((act) => (
-            <Pressable
-              key={act.id}
-              onPress={triggerHaptic}
-              style={({ pressed }) => [
-                styles.itemCard,
-                { transform: [{ scale: pressed ? 0.98 : 1 }] }
-              ]}
-              className="flex-row items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/30"
-            >
-              <View className="flex-row items-center space-x-3">
-                <View 
-                  style={{ backgroundColor: act.iconBg }}
-                  className="w-12 h-12 rounded-full items-center justify-center border border-outline-variant/20"
-                >
-                  {act.iconProvider === "fa" ? (
-                    <FontAwesome name={act.icon as any} size={20} color={act.iconColor} />
-                  ) : (
-                    <MaterialCommunityIcons name={act.icon as any} size={20} color={act.iconColor} />
-                  )}
+          {loading ? (
+            <ActivityIndicator size="small" color="#005bbf" className="py-4" />
+          ) : (
+            activities.map((act) => (
+              <Pressable
+                key={act.id}
+                onPress={triggerHaptic}
+                style={({ pressed }) => [
+                  styles.itemCard,
+                  { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                ]}
+                className="flex-row items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/30"
+              >
+                <View className="flex-row items-center space-x-3">
+                  <View 
+                    style={{ backgroundColor: act.iconBg }}
+                    className="w-12 h-12 rounded-full items-center justify-center border border-outline-variant/20"
+                  >
+                    {act.iconProvider === "fa" ? (
+                      <FontAwesome name={act.icon as any} size={20} color={act.iconColor} />
+                    ) : (
+                      <MaterialCommunityIcons name={act.icon as any} size={20} color={act.iconColor} />
+                    )}
+                  </View>
+                  <View>
+                    <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
+                      {act.merchant}
+                    </Text>
+                    <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-[10px] text-on-secondary-container">
+                      {act.time} • {act.category}
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
-                    {act.merchant}
-                  </Text>
-                  <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-[10px] text-on-secondary-container">
-                    {act.time} • {act.category}
-                  </Text>
-                </View>
-              </View>
 
-              <View className="items-end space-y-1">
-                <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
-                  ₹{act.amount}
-                </Text>
-                <View className="bg-tertiary/10 px-2 py-0.5 rounded-full border border-tertiary/20">
-                  <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[9px] text-tertiary font-bold">
-                    +₹{act.roundup} round-up
+                <View className="items-end space-y-1">
+                  <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-sm text-on-surface">
+                    ₹{act.amount}
                   </Text>
+                  <View className="bg-tertiary/10 px-2 py-0.5 rounded-full border border-tertiary/20">
+                    <Text style={{ fontFamily: "WorkSans_500Medium" }} className="text-[9px] text-tertiary font-bold">
+                      +₹{act.roundup} round-up
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ))
+          )}
         </View>
 
         {/* AI Insight Box */}

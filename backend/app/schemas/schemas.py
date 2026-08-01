@@ -21,6 +21,7 @@ class UserLogin(BaseModel):
 
 class UserResponse(UserBase):
     user_id: int
+    has_completed_onboarding: bool
     created_at: datetime
     updated_at: datetime
 
@@ -31,6 +32,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     role: str
+    has_completed_onboarding: bool
 
 class TokenData(BaseModel):
     email: Optional[str] = None

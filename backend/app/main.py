@@ -26,7 +26,7 @@ from app.routers import (
 feat-aimodel
     dream,
     notifications,
-  main
+    users,
 )
 # ==========================
 # Startup / Shutdown
@@ -118,6 +118,7 @@ app.include_router(calculations.router, prefix="/api")
 app.include_router(coach.router,        prefix="/api")
 app.include_router(dream.router,        prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(users.router,         prefix="/api")
 
 # ==========================
 # Run Server
