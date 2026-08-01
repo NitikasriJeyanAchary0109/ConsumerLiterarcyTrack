@@ -24,6 +24,7 @@ from app.routers import (
     calculations,
     coach,          # feat-aimodel: AI Coach router
     notifications,
+    users,
 )
 
 
@@ -115,6 +116,7 @@ app.include_router(budgets.router,      prefix="/api")
 app.include_router(calculations.router, prefix="/api")
 app.include_router(coach.router,        prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(users.router,         prefix="/api")
 
 # ==========================
 # Run Server

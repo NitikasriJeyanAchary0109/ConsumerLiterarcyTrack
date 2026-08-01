@@ -47,6 +47,10 @@ api.interceptors.response.use(
 
 // API call methods with adapter mapping between frontend and backend models
 export const apiService = {
+  completeOnboarding: async () => {
+    const response = await api.patch("/users/me/onboarding-complete");
+    return response.data;
+  },
   // Onboarding & Pattern Detection
   postManualSalary: async (data: { monthly_income: number; recurring_expenses: number }) => {
     try {
@@ -90,7 +94,7 @@ export const apiService = {
       merchant: t.merchant,
       type: t.type,
       date: t.transaction_date,
-      description: t.description
+      description: t.description,
     }));
   },
   createTransaction: async (data: { amount: number; category: string; merchant: string; type: string; description?: string }) => {
@@ -111,7 +115,9 @@ export const apiService = {
       merchant: t.merchant,
       type: t.type,
       date: t.transaction_date,
-      description: t.description
+      description: t.description,
+      roundup_applied: response.data.roundup_applied,
+      roundup_details: response.data.roundup_details,
     };
   },
   uploadStatement: async (formData: FormData) => {

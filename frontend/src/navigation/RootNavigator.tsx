@@ -9,16 +9,15 @@ import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
 // Onboarding Screens
-import OnboardingScreen from "../screens/onboarding/OnboardingScreen";
-import SpendingChoiceScreen from "../screens/onboarding/SpendingChoiceScreen";
-import SpendingSetupScreen from "../screens/onboarding/SpendingSetupScreen";
 import CSVUploadScreen from "../screens/onboarding/CSVUploadScreen";
-import GoalCreationScreen from "../screens/onboarding/GoalCreationScreen";
-import AnalysisScreen from "../screens/onboarding/AnalysisScreen";
+import OnboardingSetupScreen from "../screens/student/OnboardingSetupScreen";
+import SpendingEntryChoiceScreen from "../screens/student/SpendingEntryChoiceScreen";
+import ManualIncomeExpenseScreen from "../screens/student/ManualIncomeExpenseScreen";
+import CreateGoalScreen from "../screens/student/CreateGoalScreen";
 
 // Student Screens
 import HomeScreen from "../screens/student/HomeScreen";
-import GoalsScreen from "../screens/student/GoalsScreen";
+import GoalsDashboardScreen from "../screens/student/GoalsDashboardScreen";
 import GoalDetailScreen from "../screens/student/GoalDetailScreen";
 import ChatScreen from "../screens/student/ChatScreen";
 import InsightsScreen from "../screens/student/InsightsScreen";
@@ -39,21 +38,21 @@ const Tab = createBottomTabNavigator();
 
 const screenOptions = {
   headerStyle: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#ffffff",
   },
-  headerTintColor: "#f8fafc",
+  headerTintColor: "#005bbf",
   headerTitleStyle: {
     fontWeight: "bold" as const,
   },
   tabBarStyle: {
-    backgroundColor: "#1e293b",
-    borderTopColor: "#334155",
+    backgroundColor: "#ffffff",
+    borderTopColor: "#c1c6d6",
     paddingBottom: 5,
     paddingTop: 5,
     height: 60,
   },
-  tabBarActiveTintColor: "#6366f1",
-  tabBarInactiveTintColor: "#94a3b8",
+  tabBarActiveTintColor: "#005bbf",
+  tabBarInactiveTintColor: "#727785",
 };
 
 // ==========================
@@ -69,7 +68,7 @@ function StudentTabs() {
       />
       <Tab.Screen
         name="Goals"
-        component={GoalsScreen}
+        component={GoalsDashboardScreen}
         options={{ title: "Goals", tabBarLabel: "Goals" }}
       />
       <Tab.Screen
@@ -107,17 +106,17 @@ const StudentStackNavigator = createNativeStackNavigator();
 function StudentStackScreen() {
   return (
     <StudentStackNavigator.Navigator screenOptions={{ headerShown: false }}>
-      <StudentStackNavigator.Screen 
+      <StudentStackNavigator.Screen
         name="StudentTabs" 
         component={StudentTabs} 
       />
-      <StudentStackNavigator.Screen 
+      <StudentStackNavigator.Screen
         name="GoalDetail" 
         component={GoalDetailScreen} 
       />
-      <StudentStackNavigator.Screen 
+      <StudentStackNavigator.Screen
         name="GoalCreation" 
-        component={GoalCreationScreen} 
+        component={CreateGoalScreen}
       />
       <StudentStackNavigator.Screen 
         name="CSVUpload" 
@@ -144,6 +143,20 @@ function StudentStackScreen() {
         component={BudgetsScreen} 
       />
     </StudentStackNavigator.Navigator>
+  );
+}
+
+const OnboardingStackNavigator = createNativeStackNavigator();
+
+function OnboardingStackScreen() {
+  return (
+    <OnboardingStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+      <OnboardingStackNavigator.Screen name="OnboardingSetup" component={OnboardingSetupScreen} />
+      <OnboardingStackNavigator.Screen name="SpendingEntryChoice" component={SpendingEntryChoiceScreen} />
+      <OnboardingStackNavigator.Screen name="ManualIncomeExpense" component={ManualIncomeExpenseScreen} />
+      <OnboardingStackNavigator.Screen name="CSVUpload" component={CSVUploadScreen} />
+      <OnboardingStackNavigator.Screen name="CreateGoal" component={CreateGoalScreen} />
+    </OnboardingStackNavigator.Navigator>
   );
 }
 
@@ -192,29 +205,20 @@ export const RootNavigator = () => {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#0f172a",
+          backgroundColor: "#f7f9ff",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color="#6366f1" />
+        <ActivityIndicator size="large" color="#005bbf" />
       </View>
     );
   }
 
-  // Set initial unauthenticated route dynamically: returning users land on Login
-  const initialRoute = hasCompletedOnboarding ? "Login" : "Onboarding";
-
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       {userToken === null ? (
         <>
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="SpendingChoice" component={SpendingChoiceScreen} />
-          <Stack.Screen name="SpendingSetup" component={SpendingSetupScreen} />
-          <Stack.Screen name="CSVUpload" component={CSVUploadScreen} />
-          <Stack.Screen name="Analysis" component={AnalysisScreen} />
-          <Stack.Screen name="GoalCreation" component={GoalCreationScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
@@ -223,11 +227,13 @@ export const RootNavigator = () => {
           name="EducatorHome"
           component={EducatorTabs}
         />
-      ) : (
+      ) : hasCompletedOnboarding ? (
         <Stack.Screen
           name="StudentHome"
           component={StudentStackScreen}
         />
+      ) : (
+        <Stack.Screen name="Onboarding" component={OnboardingStackScreen} />
       )}
     </Stack.Navigator>
   );

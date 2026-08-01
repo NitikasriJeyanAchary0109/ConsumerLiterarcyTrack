@@ -139,20 +139,20 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
 
   return (
     <ScrollView 
-      className="flex-1 bg-slate-900 px-4 pt-4"
+      className="flex-1 bg-surface px-4 pt-4"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#005bbf" />
       }
     >
       {/* Header */}
       <View className="flex-row justify-between items-center mb-6">
         <View>
-          <Text className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Welcome Student</Text>
-          <Text className="text-slate-100 text-2xl font-black">SpareChange Dashboard</Text>
+          <Text className="text-on-surface-variant text-xs font-semibold uppercase tracking-wider">Welcome Student</Text>
+          <Text className="text-on-surface text-2xl font-black">SpareChange Dashboard</Text>
         </View>
         <TouchableOpacity 
           onPress={logout}
-          className="bg-slate-800 border border-slate-700 py-2 px-4 rounded-xl"
+          className="bg-white border border-outline-variant py-2 px-4 rounded-xl"
         >
           <Text className="text-red-400 text-xs font-bold">Logout</Text>
         </TouchableOpacity>
@@ -161,35 +161,35 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
       {/* Stats Cards */}
       <View className="flex-row gap-x-4 mb-6">
         <Card className="flex-1 my-0 py-4 items-center">
-          <Text className="text-slate-400 text-xs font-semibold mb-1">Total Auto-Saved</Text>
+          <Text className="text-on-surface-variant text-xs font-semibold mb-1">Total Auto-Saved</Text>
           {loading ? (
             <ActivityIndicator size="small" color="#10B981" />
           ) : (
-            <Text className="text-emerald-400 text-2xl font-black">${totalSaved.toFixed(2)}</Text>
+            <Text className="text-tertiary text-2xl font-black">₹{totalSaved.toFixed(2)}</Text>
           )}
         </Card>
 
         <Card className="flex-1 my-0 py-4 items-center">
-          <Text className="text-slate-400 text-xs font-semibold mb-1">Round-Up Triggers</Text>
+          <Text className="text-on-surface-variant text-xs font-semibold mb-1">Round-Up Triggers</Text>
           {loading ? (
             <ActivityIndicator size="small" color="#4F46E5" />
           ) : (
-            <Text className="text-indigo-400 text-2xl font-black">{roundupCount}</Text>
+            <Text className="text-ob-primary text-2xl font-black">{roundupCount}</Text>
           )}
         </Card>
       </View>
 
       {/* AI Roundup Alert Banner */}
       {roundupAlert && (
-        <View className="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl mb-6">
+        <View className="bg-tertiary-fixed border border-tertiary-fixed-dim p-5 rounded-2xl mb-6">
           <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-emerald-400 text-sm font-bold">🎉 Micro-savings automated!</Text>
+            <Text className="text-on-tertiary-fixed-variant text-sm font-bold">🎉 Micro-savings automated!</Text>
             <TouchableOpacity onPress={() => setRoundupAlert(null)}>
-              <Text className="text-slate-400 font-bold text-xs px-2">Dismiss</Text>
+              <Text className="text-on-surface-variant font-bold text-xs px-2">Dismiss</Text>
             </TouchableOpacity>
           </View>
-          <Text className="text-slate-100 text-xl font-black mb-1">+${roundupAlert.amount.toFixed(2)}</Text>
-          <Text className="text-slate-300 text-xs italic">"{roundupAlert.desc}"</Text>
+          <Text className="text-on-surface text-xl font-black mb-1">+₹{roundupAlert.amount.toFixed(2)}</Text>
+          <Text className="text-on-surface-variant text-xs italic">"{roundupAlert.desc}"</Text>
         </View>
       )}
 
@@ -199,18 +199,18 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
           triggerHaptic();
           navigation.navigate("SubscriptionNegotiator");
         }}
-        className="bg-indigo-500/15 border border-indigo-500/30 p-4 rounded-2xl mb-6 flex-row justify-between items-center"
+        className="bg-primary-fixed border border-primary-fixed-dim p-4 rounded-2xl mb-6 flex-row justify-between items-center"
       >
         <View className="flex-1 pr-2">
-          <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-indigo-400 text-sm">🤔 Thinking of buying something?</Text>
-          <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-slate-400 text-xs mt-1">Let SpareChange AI evaluate the delay it will cause to your savings goals.</Text>
+          <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-ob-primary text-sm">🤔 Thinking of buying something?</Text>
+          <Text style={{ fontFamily: "WorkSans_400Regular" }} className="text-on-primary-fixed-variant text-xs mt-1">Let SpareChange AI evaluate the delay it will cause to your savings goals.</Text>
         </View>
-        <MaterialIcons name="chevron-right" size={20} color="#6366f1" />
+        <MaterialIcons name="chevron-right" size={20} color="#005bbf" />
       </TouchableOpacity>
 
       {/* Log Transaction Section */}
       <Card className="mb-6">
-        <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-slate-100 text-lg mb-4">Simulate card swipe / purchase</Text>
+        <Text style={{ fontFamily: "PlusJakartaSans_700Bold" }} className="text-on-surface text-lg mb-4">Simulate card swipe / purchase</Text>
         
         <View className="flex-row gap-x-4 mb-3">
           <View className="flex-1">
@@ -267,7 +267,7 @@ export const HomeScreen = ({ navigation }: { navigation: any }) => {
 
       {/* Recent Purchases List */}
       <Card className="mb-10">
-        <Text className="text-slate-100 text-lg font-bold mb-3">Recent Transactions</Text>
+        <Text className="text-on-surface text-lg font-bold mb-3">Recent Transactions</Text>
         {loading && transactions.length === 0 ? (
           <ActivityIndicator size="small" color="#4F46E5" />
         ) : transactions.length === 0 ? (

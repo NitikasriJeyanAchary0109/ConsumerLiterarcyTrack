@@ -31,8 +31,8 @@ export const ChartWrapper: React.FC<ChartWrapperProps> = ({
   };
 
   const chartConfig = {
-    backgroundGradientFrom: "#1e293b",
-    backgroundGradientTo: "#1e293b",
+    backgroundGradientFrom: "#ffffff",
+    backgroundGradientTo: "#ffffff",
     decimalPlaces: 0,
     color: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`, // Slate 400
     labelColor: (opacity = 1) => `rgba(248, 250, 252, ${opacity})`, // Slate 50
@@ -47,8 +47,8 @@ export const ChartWrapper: React.FC<ChartWrapperProps> = ({
   };
 
   return (
-    <View className="my-2.5 bg-slate-800 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
-      <Text className="text-slate-100 text-base font-bold mb-3">{title}</Text>
+    <View className="my-2.5 bg-white border border-outline-variant rounded-2xl p-4 shadow-sm">
+      <Text className="text-on-surface text-base font-bold mb-3">{title}</Text>
       
       <View className="items-center justify-center">
         {type === "line" ? (

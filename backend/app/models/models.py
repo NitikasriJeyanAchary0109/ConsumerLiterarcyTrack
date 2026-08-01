@@ -42,6 +42,12 @@ class User(Base):
 
     role = Column(String, default="student", nullable=False)
 
+    has_completed_onboarding = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
     created_at = Column(
         DateTime,
         default=datetime.datetime.utcnow,

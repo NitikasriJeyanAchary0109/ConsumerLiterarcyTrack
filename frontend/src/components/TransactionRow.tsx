@@ -25,11 +25,11 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, onP
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className="bg-slate-800 border border-slate-700/60 rounded-xl p-4 my-1.5 flex-row justify-between items-center"
+      className="bg-white border border-outline-variant rounded-xl p-4 my-1.5 flex-row justify-between items-center"
     >
       <View className="flex-1 mr-4">
         {/* Description / Merchant */}
-        <Text className="text-slate-100 text-sm font-semibold mb-1" numberOfLines={1}>
+        <Text className="text-on-surface text-sm font-semibold mb-1" numberOfLines={1}>
           {transaction.merchant || transaction.description}
         </Text>
         
@@ -37,7 +37,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, onP
           {/* Category badge */}
           <CategoryBadge category={transaction.category} />
           
-          <Text className="text-slate-400 text-[10px] ml-2">
+          <Text className="text-on-surface-variant text-[10px] ml-2">
             {formattedDate}
           </Text>
         </View>
@@ -47,12 +47,12 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, onP
       <View className="items-end">
         <Text 
           className={`text-sm font-extrabold ${
-            isCredit ? "text-emerald-400" : "text-red-400"
+            isCredit ? "text-tertiary" : "text-ob-error"
           }`}
         >
           {isCredit ? "+" : "-"}${displayAmount}
         </Text>
-        <Text className="text-slate-500 text-[9px] uppercase font-bold mt-0.5">
+        <Text className="text-on-surface-variant text-[9px] uppercase font-bold mt-0.5">
           {transaction.type || "debit"}
         </Text>
       </View>

@@ -310,7 +310,7 @@ export const BudgetsScreen = () => {
                         <MaterialIcons
                           name={
                             b.category.toLowerCase() === "coffee"
-                              ? "local-coffeebar"
+                              ? "local-cafe"
                               : b.category.toLowerCase() === "dining"
                               ? "restaurant"
                               : b.category.toLowerCase() === "textbooks"
