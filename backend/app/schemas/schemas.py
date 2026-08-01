@@ -216,20 +216,24 @@ class TransactionResponse(TransactionBase):
 class BudgetBase(BaseModel):
     category: str
     limit_amount: Decimal
-    spent: Decimal = Decimal("0.00")
-    period: str = "monthly"
+    period: Literal["weekly", "monthly"] = "monthly"
+    start_date: Optional[datetime] = None
 
-class BudgetCreate(BaseModel):
-    trans_id: int
-    report_id: int
-    category: str
-    limit_amount: Decimal
-    period: str = "monthly"
+class BudgetCreate(BudgetBase):
+    pass
+
+class BudgetUpdate(BaseModel):
+    limit_amount: Optional[Decimal] = None
+    period: Optional[Literal["weekly", "monthly"]] = None
 
 class BudgetResponse(BudgetBase):
-    budget_id: int
-    trans_id: int
-    report_id: int
+    id: int
+    user_id: int
+    created_at: datetime
+    is_deleted: bool
+    spent_amount: Decimal = Decimal("0.00")
+    remaining_amount: Decimal = Decimal("0.00")
+    is_over_limit: bool = False
 
     class Config:
         from_attributes = True

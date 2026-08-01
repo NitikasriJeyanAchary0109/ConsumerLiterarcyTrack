@@ -117,3 +117,16 @@ export interface EducatorAnalytics {
   total_transactions_processed: number;
   recent_insights: ChatHistory[];
 }
+
+export interface AIInsight {
+  insight_id?: number;
+  chat_id?: number;
+  title?: string;
+  question?: string;
+  response?: string;
+  category?: string;
+  recommendation?: string;
+  summary?: string;
+  type?: string;
+  created_at?: string;
+}

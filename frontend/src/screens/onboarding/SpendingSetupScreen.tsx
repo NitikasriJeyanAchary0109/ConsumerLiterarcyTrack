@@ -16,6 +16,7 @@ import Animated, {
   withRepeat, 
   withTiming 
 } from "react-native-reanimated";
+import { apiService } from "../../services/api";
 
 // Width calculation for keys (3 columns)
 const { width } = Dimensions.get("window");
@@ -254,9 +255,17 @@ export const SpendingSetupScreen = ({ navigation }: { navigation: any }) => {
               styles.continueBtn,
               { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
             ]}
-            onPress={() => {
+            onPress={async () => {
               triggerHaptic();
-              navigation.navigate("CSVUpload", { 
+              try {
+                await apiService.postManualSalary({
+                  monthly_income: parseFloat(currentInput) || 0,
+                  recurring_expenses: totalExpenses
+                });
+              } catch (e) {
+                console.warn("Manual salary POST error:", e);
+              }
+              navigation.navigate("GoalCreation", { 
                 monthlyIncome: parseFloat(currentInput) || 0,
                 expensesTotal: totalExpenses
               });

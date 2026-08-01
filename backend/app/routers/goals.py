@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta, date
+from decimal import Decimal
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.models import Goal, User, Savings
@@ -189,7 +191,7 @@ def delete_goal(
                 goal_id=None,
                 amount=goal.current_amount,
                 source="goal_reallocation",
-                date=datetime.utcnow()
+                created_at=datetime.utcnow()
             )
             db.add(reallocation)
             goal.current_amount = 0
@@ -198,3 +200,102 @@ def delete_goal(
     goal.status = "abandoned"
     db.commit()
     return None
+
+
+class GoalForecastResponse(BaseModel):
+    goal_name: str
+    target_amount: Decimal
+    current_amount: Decimal
+    forecast_date: Optional[date]
+    velocity: Decimal
+    narrative: str
+
+
+@router.patch("/{goal_id}", response_model=GoalDetailResponse)
+def patch_goal(
+    goal_id: int,
+    goal_update: GoalUpdate,
+    current_user: User = Depends(require_student),
+    db: Session = Depends(get_db)
+):
+    """PATCH update details of an existing goal."""
+    return update_goal(goal_id, goal_update, current_user, db)
+
+
+@router.get("/{goal_id}/forecast", response_model=GoalForecastResponse)
+async def get_goal_forecast(
+    goal_id: int,
+    current_user: User = Depends(require_student),
+    db: Session = Depends(get_db)
+):
+    """Exposes the Dream Engine plain language narration and timeline projection for a goal."""
+    goal = db.query(Goal).filter(
+        Goal.id == goal_id,
+        Goal.user_id == current_user.user_id,
+        Goal.is_deleted == False
+    ).first()
+
+    if not goal:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Goal not found."
+        )
+
+    # 1. Fetch velocity (from last 30 days savings)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    past_savings = db.query(Savings.amount).filter(
+        Savings.goal_id == goal.id,
+        Savings.created_at >= thirty_days_ago
+    ).all()
+    
+    from decimal import Decimal
+    savings_list = [Decimal(str(s[0])) for s in past_savings]
+    velocity = savings_velocity(savings_list, 30)
+    
+    # 2. Get forecast date
+    target = Decimal(str(goal.target_amount))
+    current = Decimal(str(goal.current_amount))
+    forecast_date = goal_forecast(target, current, velocity)
+
+    # 3. Call AI narration
+    from app.utils.prompts import dream_engine_prompt
+    from app.services.ai_engine import call_llama, AIEngineError
+    
+    prompt = dream_engine_prompt(
+        goal_name=goal.title,
+        target_amount=target,
+        current_amount=current,
+        forecast_date=forecast_date,
+        velocity=velocity
+    )
+
+    try:
+        ai_forecast = await call_llama(
+            system_prompt="You are SpareChange AI's Dream Engine, describing savings forecasts in plain language.",
+            user_prompt=prompt
+        )
+    except AIEngineError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dream Engine AI is offline. Try again in a moment."
+        ) from exc
+
+    # 4. Save to ChatHistory
+    from app.models.models import ChatHistory
+    chat_record = ChatHistory(
+        user_id=current_user.user_id,
+        question=f"dream_engine: forecast for goal {goal.title}",
+        response=ai_forecast,
+        created_at=datetime.utcnow()
+    )
+    db.add(chat_record)
+    db.commit()
+
+    return GoalForecastResponse(
+        goal_name=goal.title,
+        target_amount=target,
+        current_amount=current,
+        forecast_date=forecast_date,
+        velocity=velocity,
+        narrative=ai_forecast
+    )

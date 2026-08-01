@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import datetime
+from decimal import Decimal
 
 from app.database import get_db
 from app.models.models import User, Goal, ChatHistory
 from app.schemas.schemas import ForecastRequest, ChatHistoryResponse
 from app.middleware.auth_middleware import require_student
-from app.services.ai_service import call_ai, build_dream_engine_prompt
+from app.services.rule_engine import goal_forecast
+from app.services.ai_engine import call_llama, AIEngineError
+from app.utils.prompts import dream_engine_prompt
 
 router = APIRouter(prefix="/forecast", tags=["Dream Engine"])
 
@@ -21,8 +24,9 @@ async def forecast_savings(
     incorporating automated roundups. Caches the forecast in ChatHistory.
     """
     goal = db.query(Goal).filter(
-        Goal.goal_id == request.goal_id,
-        Goal.user_id == current_user.user_id
+        Goal.id == request.goal_id,
+        Goal.user_id == current_user.user_id,
+        Goal.is_deleted == False
     ).first()
 
     if not goal:
@@ -31,19 +35,35 @@ async def forecast_savings(
             detail="Goal not found."
         )
 
+    target = Decimal(str(goal.target_amount))
+    current = Decimal(str(goal.current_amount))
+    velocity = Decimal(str(request.monthly_contribution))
+    forecast_date = goal_forecast(target, current, velocity)
+
     # Generate prompt and query AI
-    prompt = build_dream_engine_prompt(
-        goal_title=goal.goal_name,
-        target_amount=float(goal.target),
-        current_amount=float(goal.saved),
-        monthly_contrib=float(request.monthly_contribution)
+    prompt = dream_engine_prompt(
+        goal_name=goal.title,
+        target_amount=target,
+        current_amount=current,
+        forecast_date=forecast_date,
+        velocity=velocity
     )
-    ai_forecast = await call_ai(prompt)
+    
+    try:
+        ai_forecast = await call_llama(
+            system_prompt="You are SpareChange AI's Dream Engine, describing savings forecasts in plain language.",
+            user_prompt=prompt
+        )
+    except AIEngineError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dream Engine AI is offline. Try again in a moment."
+        ) from exc
 
     # Save to ChatHistory
     chat_record = ChatHistory(
         user_id=current_user.user_id,
-        question=f"Dream Engine Forecast: Save for goal '{goal.goal_name}' with monthly contribution ${request.monthly_contribution:.2f}",
+        question=f"Dream Engine Forecast: Save for goal '{goal.title}' with monthly contribution ₹{request.monthly_contribution:.2f}",
         response=ai_forecast,
         created_at=datetime.datetime.utcnow()
     )

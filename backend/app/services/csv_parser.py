@@ -2,17 +2,20 @@ import io
 import pandas as pd
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import List, Dict, Any
+from typing import Dict, Any
 
-def parse_transactions_csv(csv_bytes: bytes) -> List[Dict[str, Any]]:
+def parse_transactions_csv(csv_bytes: bytes) -> Dict[str, Any]:
     """
     Parses a bank statement CSV upload using Pandas.
     Cleans, normalizes headers, ensures standard columns, and handles data conversion.
     Expected columns: amount, category, description, transaction_date, source (optional)
+    Tracks individual row validation failures and reports them in a structured format.
     """
-    # Read bytes into Pandas DataFrame
     csv_file = io.BytesIO(csv_bytes)
-    df = pd.read_csv(csv_file)
+    try:
+        df = pd.read_csv(csv_file)
+    except Exception as e:
+        raise ValueError(f"Failed to read CSV file: {str(e)}")
     
     # Normalize column headers (strip spaces, make lowercase)
     df.columns = [col.strip().lower() for col in df.columns]
@@ -23,37 +26,60 @@ def parse_transactions_csv(csv_bytes: bytes) -> List[Dict[str, Any]]:
     if missing:
         raise ValueError(f"Missing required columns in CSV: {', '.join(missing)}")
         
-    transactions = []
+    imported = []
+    errors = []
+    failed_count = 0
     
     for idx, row in df.iterrows():
-        # Check and parse amount
-        raw_amount = row["amount"]
-        try:
-            # Strip dollar signs, commas if any, and convert to Decimal
-            amount_str = str(raw_amount).replace("$", "").replace(",", "").strip()
-            amount = Decimal(amount_str)
-        except (ValueError, InvalidOperation):
-            # Skip invalid rows or raise an error
-            continue
+        row_num = idx + 2  # 1-indexed header + 1-indexed row
+        row_errors = []
 
-        # Check and parse transaction date
-        raw_date = row.get("transaction_date", None)
-        if pd.isna(raw_date) or not raw_date:
+        # 1. Validate amount
+        amount = None
+        raw_amount = row.get("amount")
+        if pd.isna(raw_amount) or str(raw_amount).strip() == "":
+            row_errors.append({"row": row_num, "column": "amount", "error": "Amount is missing"})
+        else:
+            try:
+                # Strip currency signs/commas and convert
+                amount_str = str(raw_amount).replace("$", "").replace("₹", "").replace(",", "").strip()
+                amount = Decimal(amount_str)
+                if amount <= 0:
+                    row_errors.append({"row": row_num, "column": "amount", "error": "Amount must be positive"})
+            except (ValueError, InvalidOperation):
+                row_errors.append({"row": row_num, "column": "amount", "error": f"Invalid amount format: {raw_amount}"})
+
+        # 2. Validate category
+        category = str(row.get("category", "")).strip()
+        if pd.isna(row.get("category")) or not category:
+            row_errors.append({"row": row_num, "column": "category", "error": "Category is missing"})
+
+        # 3. Validate description
+        description = str(row.get("description", "")).strip()
+        if pd.isna(row.get("description")) or not description:
+            row_errors.append({"row": row_num, "column": "description", "error": "Description is missing"})
+
+        # 4. Check and parse transaction date
+        raw_date = row.get("transaction_date")
+        if pd.isna(raw_date) or not str(raw_date).strip():
             transaction_date = datetime.utcnow()
         else:
             try:
-                # Support common formats
                 transaction_date = pd.to_datetime(raw_date).to_pydatetime()
             except Exception:
-                transaction_date = datetime.utcnow()
+                row_errors.append({"row": row_num, "column": "transaction_date", "error": f"Invalid date format: {raw_date}"})
 
-        category = str(row["category"]).strip() if not pd.isna(row["category"]) else "Uncategorized"
-        description = str(row["description"]).strip() if not pd.isna(row["description"]) else "Transaction"
+        if row_errors:
+            errors.extend(row_errors)
+            failed_count += 1
+            continue
+
+        # Valid row
         source = str(row.get("source", "checking")).strip()
         if pd.isna(source) or not source:
             source = "checking"
 
-        transactions.append({
+        imported.append({
             "amount": amount,
             "category": category,
             "description": description,
@@ -61,4 +87,8 @@ def parse_transactions_csv(csv_bytes: bytes) -> List[Dict[str, Any]]:
             "source": source
         })
 
-    return transactions
+    return {
+        "imported": imported,
+        "failed": failed_count,
+        "errors": errors
+    }

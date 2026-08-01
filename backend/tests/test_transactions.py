@@ -36,9 +36,12 @@ def get_testing_db():
         db.close()
 
 def override_require_student():
-    if not mock_user:
-        raise Exception("Mock user not initialized")
-    return mock_user
+    db = TestingSessionLocal()
+    try:
+        user = db.query(User).filter(User.user_id == 1).first()
+        return user
+    finally:
+        db.close()
 
 app.dependency_overrides[get_db] = get_testing_db
 app.dependency_overrides[require_student] = override_require_student
@@ -47,6 +50,10 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_database():
+    app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = get_testing_db
+    app.dependency_overrides[require_student] = override_require_student
+
     # Clear tables before each test
     db = TestingSessionLocal()
     db.query(AuditLog).delete()
@@ -113,7 +120,7 @@ def test_create_transaction_with_roundup():
     # Verify roundup applied status
     assert data["roundup_applied"] is True
     assert data["roundup_details"]["success"] is True
-    assert data["roundup_details"]["roundup_amount"] == 0.40
+    assert data["roundup_details"]["roundup_amount"] == "0.40"
     
     # Verify goal saved balance updated in database
     db = TestingSessionLocal()
@@ -350,7 +357,7 @@ def test_delete_transaction_soft_delete_and_reverse_roundup():
         triggered_by_transaction_id=tx_id,
         amount=Decimal("7.50"),
         source="round_up",
-        date=datetime.datetime.utcnow()
+        created_at=datetime.datetime.utcnow()
     )
     db.add(savings)
     

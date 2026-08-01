@@ -295,3 +295,18 @@ def wellness_prompt(
         "financial health, and give 2-3 small, specific, actionable suggestions to "
         "improve it. Keep the tone encouraging, not alarming."
     )
+
+
+def explain_roundup_prompt(
+    transaction_desc: str,
+    transaction_amount: Decimal,
+    roundup_amount: Decimal,
+) -> str:
+    """
+    Build the prompt for explaining transaction roundups.
+    """
+    return (
+        f"The student spent ₹{transaction_amount:.2f} on '{transaction_desc}'. "
+        f"A micro-saving roundup of ₹{roundup_amount:.2f} was automatically directed to their savings goal. "
+        f"Provide a friendly, one-sentence explanation of why this micro-saving is beneficial for their long-term financial habits."
+    )
