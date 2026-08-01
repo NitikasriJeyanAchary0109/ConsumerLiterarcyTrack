@@ -115,7 +115,7 @@ export const CSVUploadScreen = ({ navigation }: { navigation: any }) => {
   const uploadComplete = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setLoading(false);
-    navigation.navigate("Analysis");
+    navigation.navigate("CreateGoal");
   };
 
   return (

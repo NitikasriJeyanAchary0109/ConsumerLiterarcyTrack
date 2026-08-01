@@ -6,7 +6,7 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.models.models import Goal, User, Savings
+from app.models.models import Goal, User, Savings, AuditLog
 from app.schemas.schemas import GoalCreate, GoalResponse, GoalUpdate, GoalDetailResponse
 from app.middleware.auth_middleware import get_current_user, require_student
 from app.services.rule_engine import savings_velocity, goal_forecast
@@ -57,41 +57,56 @@ def create_goal(
     db.add(db_goal)
     db.commit()
     db.refresh(db_goal)
+
+    # Write AuditLog
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        action="create",
+        entity_type="goal",
+        entity_id=db_goal.id,
+        performed_by=f"user_{current_user.user_id}",
+        timestamp=datetime.utcnow()
+    )
+    db.add(audit)
+    db.commit()
+
     return db_goal
 
 
 def compute_goal_details(goal: Goal, db: Session) -> dict:
     """Helper to compute progress and projection."""
-    result = goal.__dict__.copy()
-    
     # Progress percentage
     if goal.target_amount > 0:
         pct = float((goal.current_amount / goal.target_amount) * 100)
-        result["progress_percentage"] = min(pct, 100.0)
+        progress_percentage = min(pct, 100.0)
     else:
-        result["progress_percentage"] = 0.0
+        progress_percentage = 0.0
 
     # Projected completion date
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     past_savings = db.query(Savings.amount).filter(
         Savings.goal_id == goal.id,
-        Savings.date >= thirty_days_ago
+        Savings.created_at >= thirty_days_ago
     ).all()
     
     savings_list = [s[0] for s in past_savings]
     velocity = savings_velocity(savings_list, 30)
     
     projected_date = goal_forecast(goal.target_amount, goal.current_amount, velocity)
-    # goal_forecast returns date. We handle Sentinel GOAL_UNREACHABLE_DATE if velocity 0
-    # The requirement asks to return it, we just pass the date object.
     
-    # Ensure it's compatible with datetime.date
-    if projected_date:
-        result["projected_completion_date"] = projected_date
-    else:
-        result["projected_completion_date"] = None
-        
-    return result
+    return {
+        "id": goal.id,
+        "user_id": goal.user_id,
+        "title": goal.title,
+        "target_amount": goal.target_amount,
+        "current_amount": goal.current_amount,
+        "target_date": goal.target_date,
+        "status": goal.status,
+        "created_at": goal.created_at,
+        "is_deleted": goal.is_deleted,
+        "progress_percentage": progress_percentage,
+        "projected_completion_date": projected_date if projected_date else None
+    }
 
 
 @router.get("/{goal_id}", response_model=GoalDetailResponse)
@@ -155,6 +170,19 @@ def update_goal(
 
     db.commit()
     db.refresh(goal)
+
+    # Write AuditLog
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        action="update",
+        entity_type="goal",
+        entity_id=goal.id,
+        performed_by=f"user_{current_user.user_id}",
+        timestamp=datetime.utcnow()
+    )
+    db.add(audit)
+    db.commit()
+
     return compute_goal_details(goal, db)
 
 
@@ -199,6 +227,19 @@ def delete_goal(
     goal.is_deleted = True
     goal.status = "abandoned"
     db.commit()
+
+    # Write AuditLog
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        action="delete",
+        entity_type="goal",
+        entity_id=goal.id,
+        performed_by=f"user_{current_user.user_id}",
+        timestamp=datetime.utcnow()
+    )
+    db.add(audit)
+    db.commit()
+
     return None
 
 

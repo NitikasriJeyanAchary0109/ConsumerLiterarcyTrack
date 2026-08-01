@@ -27,6 +27,7 @@ from app.routers import (
     notifications,
     dream,          # feat-aimodel: Dream Engine (goal forecast)
     wellness,       # feat-aimodel: Financial Wellness (stress score)
+    users,
 )
 # ==========================
 # Startup / Shutdown
@@ -123,6 +124,7 @@ app.include_router(coach.router,        prefix="/api")   # from feat-aimodel
 app.include_router(dream.router,        prefix="/api")   # from feat-aimodel
 app.include_router(wellness.router,     prefix="/api")   # from feat-aimodel
 
+app.include_router(users.router,         prefix="/api")
 
 # ==========================
 # Run Server
