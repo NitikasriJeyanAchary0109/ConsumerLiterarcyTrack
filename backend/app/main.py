@@ -23,11 +23,11 @@ from app.routers import (
     budgets,
     calculations,
     coach,          # feat-aimodel: AI Coach router
+feat-aimodel
+    dream,
     notifications,
     users,
 )
-
-
 # ==========================
 # Startup / Shutdown
 # ==========================
@@ -99,6 +99,7 @@ async def healthcheck(db: Session = Depends(get_db)):
     }
 
 
+
 # ==========================
 # Routers
 # ==========================
@@ -115,6 +116,7 @@ app.include_router(savings.router,      prefix="/api")
 app.include_router(budgets.router,      prefix="/api")
 app.include_router(calculations.router, prefix="/api")
 app.include_router(coach.router,        prefix="/api")
+app.include_router(dream.router,        prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(users.router,         prefix="/api")
 
